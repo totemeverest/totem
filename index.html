@@ -407,6 +407,7 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
   <header>
     <div class="ptit"><img class="logo-img" src="logo1.png" alt=""><b>RELATÓRIO EVEREST</b><small id="nuvemStatus" style="font-size:12px;font-weight:700;color:var(--muted)"></small></div>
     <div class="hbtns">
+      <button onclick="atualizarAgora()">⟳ Atualizar</button>
       <button style="border-color:rgba(255,201,60,.6);color:var(--dourado)" onclick="auditoriaIA()">✦ Auditoria IA</button>
       <button onclick="compartilharResumo()">Compartilhar resumo</button>
       <button onclick="exportarCSV()">Exportar CSV</button>
@@ -1157,7 +1158,7 @@ function cartaoFeedback(r, tipo){
     ${detalhe}
   </div>`;
 }
-function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 /* ================= COMPARTILHAR RESUMO (WhatsApp) ================= */
 function nomePeriodo(){ return (PERIODOS.find(([id])=>id===periodoAtual)||[,'Tudo'])[1]; }
@@ -1341,7 +1342,7 @@ function initNuvem(){
     db = firebase.firestore();
     try{ db.enablePersistence({synchronizeTabs:false}).catch(()=>{}); }catch(e){}
     firebase.auth().signInAnonymously()
-      .then(()=>{ nuvemOK = true; sincronizarPendentes(); })
+      .then(()=>{ nuvemOK = true; sincronizarPendentes(); ligarTempoReal(); })
       .catch(()=>{});
   }catch(e){ db = null; }
 }
@@ -1380,27 +1381,69 @@ function sincronizarPendentes(){
   });
   db.collection('config').doc('geral').set({prof_ativo: localStorage.getItem(KATIVO)||'0'}).catch(()=>{});
 }
+/* A NUVEM É A FONTE DA VERDADE: o que veio dela substitui a cópia local
+   (então exclusões e edições feitas em outro aparelho valem aqui também).
+   Só ficam protegidos os registros ainda não enviados (sync !== true). */
+function reconciliar(col, snap){
+  const k = chaveLocal(col);
+  let local = [];
+  try{ local = JSON.parse(localStorage.getItem(k)||'[]'); }catch(e){}
+  const pendentes = local.filter(r=>!r.uid || r.sync!==true);   // ainda não subiram: preserva
+  const pendUids = new Set(pendentes.map(r=>String(r.uid)));
+  const daNuvem = [];
+  snap.forEach(doc=>{
+    if(!pendUids.has(String(doc.id))){ const d = doc.data(); d.sync = true; daNuvem.push(d); }
+  });
+  const novo = daNuvem.concat(pendentes);
+  novo.sort((a,b)=>String(a.ts||'').localeCompare(String(b.ts||'')));
+  localStorage.setItem(k, JSON.stringify(novo));
+}
 async function puxarNuvem(){
   if(!db || !nuvemOK) return false;
   try{
     for(const col of ['avaliacoes','professores','avaliacoes_professores']){
-      const snap = await db.collection(col).get();
-      const k = chaveLocal(col);
-      const local = JSON.parse(localStorage.getItem(k)||'[]');
-      const uids = new Set(local.map(r=>String(r.uid)));
-      let mudou = false;
-      snap.forEach(doc=>{
-        if(!uids.has(String(doc.id))){ const d = doc.data(); d.sync = true; local.push(d); mudou = true; }
-      });
-      if(mudou){
-        local.sort((a,b)=>String(a.ts||'').localeCompare(String(b.ts||'')));
-        localStorage.setItem(k, JSON.stringify(local));
-      }
+      reconciliar(col, await db.collection(col).get());
     }
     const cfg = await db.collection('config').doc('geral').get();
     if(cfg.exists && cfg.data().prof_ativo!=null) localStorage.setItem(KATIVO, String(cfg.data().prof_ativo));
     return true;
   }catch(e){ return false; }
+}
+
+/* TEMPO REAL: qualquer mudança em qualquer aparelho chega aqui na hora */
+function ligarTempoReal(){
+  if(!db) return;
+  ['avaliacoes','professores','avaliacoes_professores'].forEach(col=>{
+    db.collection(col).onSnapshot(snap=>{
+      reconciliar(col, snap);
+      aoMudarDados(col);
+    }, ()=>{});
+  });
+  db.collection('config').doc('geral').onSnapshot(doc=>{
+    if(doc.exists && doc.data().prof_ativo!=null){
+      const v = String(doc.data().prof_ativo);
+      if(v !== (localStorage.getItem(KATIVO)||'0')){
+        localStorage.setItem(KATIVO, v);
+        aoMudarDados('config');
+      }
+    }
+  }, ()=>{});
+}
+function aoMudarDados(col){
+  if(document.getElementById('painel').classList.contains('on')){
+    desenharFiltros(); desenharPainel();
+    statusNuvem('Nuvem: sincronizada ✓ (tempo real)', 'var(--bom)');
+  } else if(passo===0 && !emProf && (col==='professores' || col==='config')){
+    render();   // atualiza o botão AVALIAR PROFESSOR na tela inicial
+  }
+}
+function atualizarAgora(){
+  statusNuvem('Nuvem: atualizando…');
+  sincronizarPendentes();
+  puxarNuvem().then(ok=>{
+    desenharFiltros(); desenharPainel();
+    statusNuvem(ok ? 'Nuvem: sincronizada ✓' : 'Nuvem: offline (dados seguros no tablet)', ok ? 'var(--bom)' : 'var(--regular)');
+  });
 }
 function statusNuvem(txt, cor){
   const el = document.getElementById('nuvemStatus');
@@ -1537,22 +1580,29 @@ function enviarProf(){
 function sairProf(){ emProf = false; profEnviando = false; passo = 0; render(); }
 
 /* ---- administração (painel do Wilson) ---- */
-let fotoPendente = null;
-document.getElementById('profFoto').addEventListener('change', e=>{
-  const f = e.target.files[0];
-  if(!f) return;
+function processarFoto(file, cb){
   const img = new Image();
   img.onload = ()=>{
     const s = Math.min(img.width, img.height);
     const c = document.createElement('canvas');
     c.width = c.height = 400;   // tamanho padrão pra todas as fotos
     c.getContext('2d').drawImage(img, (img.width-s)/2, (img.height-s)/2, s, s, 0, 0, 400, 400);
-    fotoPendente = c.toDataURL('image/jpeg', .82);
-    document.getElementById('profFotoStatus').textContent = 'Foto pronta (ajustada pro padrão). Agora clique em Adicionar.';
     URL.revokeObjectURL(img.src);
+    cb(c.toDataURL('image/jpeg', .82));
   };
-  img.onerror = ()=>{ document.getElementById('profFotoStatus').textContent = 'Não consegui ler essa imagem. Tente outra.'; };
-  img.src = URL.createObjectURL(f);
+  img.onerror = ()=>cb(null);
+  img.src = URL.createObjectURL(file);
+}
+let fotoPendente = null, ppFotoPendente = null;
+document.getElementById('profFoto').addEventListener('change', e=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  processarFoto(f, url=>{
+    fotoPendente = url;
+    document.getElementById('profFotoStatus').textContent = url
+      ? 'Foto pronta (ajustada pro padrão). Agora clique em Adicionar.'
+      : 'Não consegui ler essa imagem. Tente outra.';
+  });
 });
 function addProf(){
   const nome = document.getElementById('profNome').value.trim();
@@ -1646,6 +1696,7 @@ function abrirPerfilProf(id){
       ${a.comentario ? `<p>“${escHtml(a.comentario)}”</p>` : `<p style="color:var(--muted)">Sem comentário — só a nota.</p>`}
     </div>`;
 
+  ppFotoPendente = null;
   document.getElementById('ppTitulo').textContent = 'PERFIL · '+p.nome.toUpperCase();
   document.getElementById('ppCorpo').innerHTML = `
     <div class="bloco" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
@@ -1660,13 +1711,50 @@ function abrirPerfilProf(id){
         </div>
       </div>
     </div>
+    <div class="bloco"><h3>Editar professor</h3>
+      <div class="prof-form">
+        <input class="campo" id="ppNome" autocomplete="off" value="${escHtml(p.nome)}" style="flex:1;min-width:180px;margin:0">
+        <label class="btn-arq" for="ppFoto">Trocar foto</label>
+        <input type="file" id="ppFoto" accept="image/*" hidden>
+        <button class="btn-arq ouro2" onclick="salvarEdicaoProf('${p.id}')">Salvar alterações</button>
+      </div>
+      <p class="vazio" id="ppFotoStatus" style="padding:8px 0 0">Se não escolher foto nova, a atual continua.</p>
+    </div>
     <div class="bloco"><h3 style="color:var(--bom)">Elogios (4 e 5 estrelas) — ${elogios.length}</h3>
       ${elogios.length ? elogios.map(a=>item(a,'elogio')).join('') : '<div class="vazio">Nenhum elogio ainda.</div>'}
     </div>
     <div class="bloco"><h3 style="color:var(--ruim)">Críticas (1 a 3 estrelas) — ${criticas.length}</h3>
       ${criticas.length ? criticas.map(a=>item(a,'critica')).join('') : '<div class="vazio">Nenhuma crítica. Excelente!</div>'}
     </div>`;
+  document.getElementById('ppFoto').addEventListener('change', e=>{
+    const f = e.target.files[0];
+    if(!f) return;
+    processarFoto(f, url=>{
+      ppFotoPendente = url;
+      document.getElementById('ppFotoStatus').textContent = url
+        ? 'Foto nova pronta — clique em "Salvar alterações".'
+        : 'Não consegui ler essa imagem. Tente outra.';
+    });
+  });
   document.getElementById('perfilProf').classList.add('on');
+}
+function salvarEdicaoProf(id){
+  const lista = profs();
+  const p = lista.find(x=>String(x.id)===String(id));
+  if(!p) return;
+  const nome = (document.getElementById('ppNome')?.value||'').trim();
+  if(!nome){ alert('O nome não pode ficar vazio.'); return; }
+  p.nome = nome;
+  if(ppFotoPendente) p.foto = ppFotoPendente;
+  if(!p.uid) p.uid = novoUid();
+  p.sync = false;
+  try{ localStorage.setItem(KPROF, JSON.stringify(lista)); }
+  catch(e){ alert('Não coube no armazenamento. Tente uma foto menor.'); return; }
+  salvarNuvem('professores', p);
+  ppFotoPendente = null;
+  desenharProfsAdmin();
+  abrirPerfilProf(id);
+  alert('Professor atualizado! A mudança já foi pra nuvem e aparece em todos os aparelhos.');
 }
 function fecharPerfilProf(){ document.getElementById('perfilProf').classList.remove('on'); }
 

@@ -1,0 +1,13 @@
+{
+  "name": "Totem Everest Academia",
+  "short_name": "Totem Everest",
+  "description": "Avaliação de experiência da Everest Academia",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#171130",
+  "theme_color": "#171130",
+  "icons": [
+    { "src": "logo1.png", "sizes": "225x225", "type": "image/png", "purpose": "any" }
+  ]
+}

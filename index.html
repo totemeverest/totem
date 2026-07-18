@@ -169,6 +169,8 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 .btn.fantasma{background:none;border:2px solid rgba(255,255,255,.25);box-shadow:none;color:var(--muted);min-width:150px}
 .btn:disabled{opacity:.35;pointer-events:none}
 .btn.pulsa{animation:pulsa 2s ease-in-out infinite}
+.btn.vermelho{background:linear-gradient(135deg,#ff5470,#e83b5a);color:#fff;box-shadow:0 14px 34px rgba(255,84,112,.45);animation:pulsaVerm 1.5s ease-in-out infinite}
+@keyframes pulsaVerm{0%,100%{box-shadow:0 14px 34px rgba(255,84,112,.45)}50%{box-shadow:0 14px 34px rgba(255,84,112,.45),0 0 0 16px rgba(255,84,112,.14)}}
 @keyframes pulsa{0%,100%{box-shadow:0 14px 34px rgba(255,176,32,.4)}50%{box-shadow:0 14px 34px rgba(255,176,32,.4),0 0 0 16px rgba(255,201,60,.12)}}
 .voltar{position:absolute;left:34px;bottom:26px;z-index:5;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:var(--muted);border-radius:99px;padding:13px 26px;font-family:var(--fTexto);font-size:16px;font-weight:800;font-style:italic;cursor:pointer;display:none}
 .voltar.on{display:block}
@@ -219,6 +221,25 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 .abas button[data-t="elogios"].on{background:linear-gradient(135deg,#4cd97b,#2fbf68);color:#0e2417;box-shadow:0 8px 22px rgba(76,217,123,.4)}
 .abas button[data-t="professores"]{color:#5aa2ff;border-color:rgba(90,162,255,.35)}
 .abas button[data-t="professores"].on{background:linear-gradient(135deg,#5aa2ff,#2f6fe0);color:#fff;box-shadow:0 8px 22px rgba(90,162,255,.4)}
+.abas button[data-t="roleta"]{color:var(--regular);border-color:rgba(255,162,62,.35)}
+.abas button[data-t="roleta"].on{background:linear-gradient(135deg,#ffa23e,#f08c1e);color:#2a1450;box-shadow:0 8px 22px rgba(255,162,62,.4)}
+/* selo de novidades */
+.tag-nova{display:inline-block;margin-left:8px;background:var(--ruim);color:#fff;border-radius:99px;padding:3px 10px;font-size:11px;font-weight:900;letter-spacing:.5px;vertical-align:middle}
+.tag-nova.verde{background:var(--bom);color:#0e2417}
+.pnovas{display:inline-flex;gap:5px;margin-left:8px;vertical-align:middle}
+.pnovas span{font-size:10px;font-weight:900;padding:2px 8px;border-radius:99px}
+.pnovas .nc{background:rgba(255,84,112,.2);color:var(--ruim)}
+.pnovas .ne{background:rgba(76,217,123,.2);color:var(--bom)}
+/* tela de prêmio */
+.cod-premio{display:inline-block;background:#fff;color:#2a1450;font-family:var(--fTitulo);font-style:italic;font-size:clamp(24px,3.4vw,38px);letter-spacing:3px;padding:14px 30px;border-radius:14px;border:3px dashed var(--dourado);box-shadow:0 0 34px rgba(255,201,60,.45)}
+.regras-premio{max-width:640px;margin:0 auto;background:rgba(255,201,60,.08);border:1px solid rgba(255,201,60,.35);border-radius:14px;padding:14px 18px;font-size:15px;font-weight:700;color:var(--dourado);line-height:1.5}
+.premio-linha{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;margin-bottom:10px;flex-wrap:wrap}
+.premio-linha b.cod{font-family:var(--fTitulo);font-style:italic;letter-spacing:2px;font-size:18px;color:var(--dourado)}
+.premio-linha small{color:var(--muted);font-weight:700}
+.premio-linha .flex1{flex:1}
+.premio-linha button{border:1px solid rgba(76,217,123,.5);background:none;color:var(--bom);border-radius:10px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer}
+.premio-linha.ok{opacity:.55}
+.premio-linha.ok button{border-color:rgba(255,255,255,.2);color:var(--muted)}
 .tab{display:none}
 .tab.on{display:block;animation:surge .35s ease}
 @keyframes surge{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
@@ -450,9 +471,10 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
     <div class="abas" id="abas">
       <button data-t="geral" class="on" onclick="setAba('geral')">Visão Geral</button>
       <button data-t="notas" onclick="setAba('notas')">Notas</button>
-      <button data-t="criticas" onclick="setAba('criticas')">Críticas</button>
-      <button data-t="elogios" onclick="setAba('elogios')">Elogios</button>
-      <button data-t="professores" onclick="setAba('professores')">Equipe</button>
+      <button data-t="criticas" onclick="setAba('criticas')">Críticas<span class="tag-nova" id="badgeCriticas" hidden></span></button>
+      <button data-t="elogios" onclick="setAba('elogios')">Elogios<span class="tag-nova verde" id="badgeElogios" hidden></span></button>
+      <button data-t="professores" onclick="setAba('professores')">Equipe<span class="tag-nova" id="badgeEquipe" hidden></span></button>
+      <button data-t="roleta" onclick="setAba('roleta')">Prêmios</button>
     </div>
     <div id="tab-geral" class="tab on">
       <div class="kpis" id="kpis"></div>
@@ -506,6 +528,50 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
       </div>
       <div class="bloco">
         <h3 style="color:var(--ruim)">Apagar dados da equipe</h3>
+        <button class="pdel" style="padding:12px 20px;font-size:13px" onclick="apagarAvalProfs()">Apagar TODAS as avaliações da equipe</button>
+        <p class="vazio" style="padding:8px 0 0">Pede a senha do relatório. Apaga só as avaliações — nomes e fotos continuam. O botão "Apagar dados" lá de cima NÃO mexe na equipe.</p>
+      </div>
+    </div>
+    <div id="tab-roleta" class="tab">
+      <div class="bloco">
+        <h3>Prêmios no totem</h3>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <button class="toggle" id="btnRoletaToggle" onclick="toggleRoleta()"></button>
+          <b id="roletaToggleTxt" style="font-style:italic;letter-spacing:1px"></b>
+        </div>
+        <p class="vazio" style="padding:8px 0 0">Ativada: quando a contagem de avaliações bater a meta, quem completar a avaliação da vez GANHA o prêmio na tela final, com código único.</p>
+      </div>
+      <div class="bloco">
+        <h3>Prêmio atual</h3>
+        <div id="premioAtual"></div>
+      </div>
+      <div class="bloco">
+        <h3>Criar novo prêmio <small style="color:var(--muted);font-weight:600">(substitui o atual — pra editar, use o botão Editar do card acima)</small></h3>
+        <div class="prof-form" style="flex-direction:column;align-items:stretch">
+          <input class="campo" id="rolNome" autocomplete="off" placeholder="Nome do prêmio (ex.: Shake grátis no Quiosque)" style="margin:0">
+          <input class="campo" id="rolDesc" autocomplete="off" placeholder="Descrição (ex.: Um shake de whey à sua escolha)" style="margin:0">
+          <input class="campo" id="rolAlvo" type="number" min="1" placeholder="Sortear a cada quantas avaliações? (ex.: 200)" style="margin:0">
+          <input class="campo" id="rolRegras" autocomplete="off" placeholder="Regras extras (opcional)" style="margin:0">
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn-arq" id="rolLocalAcad" onclick="setLocalRoleta('academia')">Vale só DENTRO da academia</button>
+            <button class="btn-arq" id="rolLocalQualquer" onclick="setLocalRoleta('qualquer')">Vale em QUALQUER lugar</button>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <label class="btn-arq" for="rolFoto">Foto do prêmio</label>
+            <input type="file" id="rolFoto" accept="image/*" hidden>
+            <button class="btn-arq ouro2" onclick="salvarRoleta()">Salvar prêmio</button>
+          </div>
+        </div>
+        <p class="vazio" id="rolFotoStatus" style="padding:8px 0 0">A contagem e o momento do prêmio ficam invisíveis pro aluno — ninguém sabe quando vai sair.</p>
+      </div>
+      <div class="bloco">
+        <h3>Prêmios gerados (antifraude)</h3>
+        <p class="vazio" style="padding:0 0 10px">Quando alguém apresentar a tela premiada, confira o CÓDIGO e a HORA aqui antes de entregar. Depois marque como entregue.</p>
+        <div id="listaPremios"></div>
+      </div>
+    </div>
+    <div id="tab-apagar-oculto" hidden>
+      <div class="bloco">
         <button class="pdel" style="padding:12px 20px;font-size:13px" onclick="apagarAvalProfs()">Apagar TODAS as avaliações da equipe</button>
         <p class="vazio" style="padding:8px 0 0">Pede a senha do relatório. Apaga só as avaliações — nomes e fotos continuam. O botão "Apagar dados" lá de cima NÃO mexe na equipe.</p>
       </div>
@@ -688,7 +754,7 @@ function agendarAtrator(){
   const ocupado = document.getElementById('painel').classList.contains('on')
                || document.getElementById('login').classList.contains('on')
                || document.getElementById('atrator').classList.contains('on');
-  if(passo===0 && !emProf && !ocupado) atratorTimer = setTimeout(abrirAtrator, ATRATOR_MS);
+  if(passo===0 && !emProf && !emPremio && !ocupado) atratorTimer = setTimeout(abrirAtrator, ATRATOR_MS);
 }
 function abrirAtrator(){
   document.getElementById('atrator').classList.add('on');
@@ -868,7 +934,12 @@ function finalizar(){
   passo = PASSOS.length - 1; render();
   som('fim');
   soltarConfete();
-  setTimeout(()=>{ passo = 0; enviando = false; render(); }, 6000);
+  const premio = verificarPremio();
+  if(premio){
+    setTimeout(()=>mostrarPremio(premio), 2200);   // mostra o obrigado e emenda no prêmio
+  } else {
+    setTimeout(()=>{ passo = 0; enviando = false; render(); }, 6000);
+  }
 }
 
 /* ================= CONFETE ================= */
@@ -890,6 +961,7 @@ function soltarConfete(){
 /* ================= INATIVIDADE ================= */
 function resetIdle(){
   clearTimeout(idleTimer);
+  if(emPremio) return;   // tela de prêmio NUNCA fecha sozinha
   if(emProf || (passo>0 && PASSOS[passo].tipo!=='fim')){
     idleTimer = setTimeout(()=>{ emProf=false; enviando=false; passo=0; render(); }, IDLE_MS);
   }
@@ -1016,6 +1088,9 @@ function setAba(t){
   document.querySelectorAll('.abas button').forEach(b=>b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
   document.getElementById('tab-'+t).classList.add('on');
+  // abriu a aba = viu as novidades dela
+  if(t==='criticas'){ localStorage.setItem(KV_C, new Date().toISOString()); desenharBadges(); }
+  if(t==='elogios'){ localStorage.setItem(KV_E, new Date().toISOString()); desenharBadges(); }
 }
 function fecharPainel(){ document.getElementById('painel').classList.remove('on'); emProf=false; passo=0; render(); }
 
@@ -1145,6 +1220,9 @@ function desenharPainel(){
 
   // ===== aba professores =====
   desenharProfsAdmin();
+  // ===== roleta e alertas =====
+  desenharRoletaAdmin();
+  desenharBadges();
 }
 
 function cartaoFeedback(r, tipo){
@@ -1391,7 +1469,7 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
 }
 window.addEventListener('online', ()=>{ if(db) sincronizarPendentes(); });
 
-function chaveLocal(col){ return col==='avaliacoes' ? CHAVE : col==='professores' ? KPROF : KAPROF; }
+function chaveLocal(col){ return col==='avaliacoes' ? CHAVE : col==='professores' ? KPROF : col==='premios' ? KPREMIOS : KAPROF; }
 function novoUid(){ return Date.now()+'-'+Math.random().toString(36).slice(2,8); }
 
 function salvarNuvem(col, obj){
@@ -1409,14 +1487,14 @@ function salvarNuvem(col, obj){
 }
 function sincronizarPendentes(){
   if(!db) return;
-  ['avaliacoes','professores','avaliacoes_professores'].forEach(col=>{
+  ['avaliacoes','professores','avaliacoes_professores','premios'].forEach(col=>{
     try{
       JSON.parse(localStorage.getItem(chaveLocal(col))||'[]')
         .filter(r=>r.uid && r.sync!==true)
         .forEach(r=>salvarNuvem(col, r));
     }catch(e){}
   });
-  db.collection('config').doc('geral').set({prof_ativo: localStorage.getItem(KATIVO)||'0'}).catch(()=>{});
+  db.collection('config').doc('geral').set({prof_ativo: localStorage.getItem(KATIVO)||'0'}, {merge:true}).catch(()=>{});
 }
 /* A NUVEM É A FONTE DA VERDADE: o que veio dela substitui a cópia local
    (então exclusões e edições feitas em outro aparelho valem aqui também).
@@ -1438,7 +1516,7 @@ function reconciliar(col, snap){
 async function puxarNuvem(){
   if(!db || !nuvemOK) return false;
   try{
-    for(const col of ['avaliacoes','professores','avaliacoes_professores']){
+    for(const col of ['avaliacoes','professores','avaliacoes_professores','premios']){
       reconciliar(col, await db.collection(col).get());
     }
     const cfg = await db.collection('config').doc('geral').get();
@@ -1450,20 +1528,25 @@ async function puxarNuvem(){
 /* TEMPO REAL: qualquer mudança em qualquer aparelho chega aqui na hora */
 function ligarTempoReal(){
   if(!db) return;
-  ['avaliacoes','professores','avaliacoes_professores'].forEach(col=>{
+  ['avaliacoes','professores','avaliacoes_professores','premios'].forEach(col=>{
     db.collection(col).onSnapshot(snap=>{
       reconciliar(col, snap);
       aoMudarDados(col);
     }, ()=>{});
   });
   db.collection('config').doc('geral').onSnapshot(doc=>{
-    if(doc.exists && doc.data().prof_ativo!=null){
-      const v = String(doc.data().prof_ativo);
-      if(v !== (localStorage.getItem(KATIVO)||'0')){
-        localStorage.setItem(KATIVO, v);
-        aoMudarDados('config');
-      }
+    if(!doc.exists) return;
+    const d = doc.data();
+    let mudou = false;
+    if(d.prof_ativo!=null && String(d.prof_ativo) !== (localStorage.getItem(KATIVO)||'0')){
+      localStorage.setItem(KATIVO, String(d.prof_ativo));
+      mudou = true;
     }
+    if(d.roleta && JSON.stringify(d.roleta) !== localStorage.getItem(KROLETA)){
+      salvarRoletaLocal(d.roleta);
+      mudou = true;
+    }
+    if(mudou) aoMudarDados('config');
   }, ()=>{});
 }
 function aoMudarDados(col){
@@ -1725,7 +1808,7 @@ function delProf(id){
 }
 function toggleProf(){
   localStorage.setItem(KATIVO, profAtivo() ? '0' : '1');
-  if(db) db.collection('config').doc('geral').set({prof_ativo: localStorage.getItem(KATIVO)}).catch(()=>{});
+  if(db) db.collection('config').doc('geral').set({prof_ativo: localStorage.getItem(KATIVO)}, {merge:true}).catch(()=>{});
   desenharProfsAdmin();
 }
 /* avaliação de professores é MENSAL: o mês atual vale a disputa,
@@ -1754,7 +1837,9 @@ function desenharProfsAdmin(){
   document.getElementById('mesProfLabel').textContent = rotuloMes.charAt(0).toUpperCase()+rotuloMes.slice(1);
 
   const lista = profs();
-  const avs = avalProfs().filter(x=>x.ts && x.ts.slice(0,7)===mesProf);
+  const todasAvs = avalProfs();
+  const vp = vistoProfs();
+  const avs = todasAvs.filter(x=>x.ts && x.ts.slice(0,7)===mesProf);
   const ranking = lista.map(p=>{
     const av = avs.filter(a=>String(a.prof)===String(p.id));
     const m = av.length ? av.reduce((x,a)=>x+a.estrelas,0)/av.length : 0;
@@ -1768,7 +1853,11 @@ function desenharProfsAdmin(){
       <b class="rank">${i+1}º</b>
       ${x.p.foto?`<img src="${x.p.foto}" alt="">`:`<span class="ph">${AVATAR}</span>`}
       <div class="pinfo">
-        <b>${escHtml(nomeCargo(x.p.nome).n)}${nomeCargo(x.p.nome).c?` <small style="color:var(--muted);font-size:12px;font-weight:700"> · ${escHtml(nomeCargo(x.p.nome).c)}</small>`:''}${i===0 && x.av.length ? ' &nbsp;🏆' : ''}</b>
+        <b>${escHtml(nomeCargo(x.p.nome).n)}${nomeCargo(x.p.nome).c?` <small style="color:var(--muted);font-size:12px;font-weight:700"> · ${escHtml(nomeCargo(x.p.nome).c)}</small>`:''}${i===0 && x.av.length ? ' &nbsp;🏆' : ''}${(()=>{
+          const novas = todasAvs.filter(a=>String(a.prof)===String(x.p.id) && a.ts > (vp[String(x.p.id)]||''));
+          const nnc = novas.filter(a=>a.estrelas<=3).length, nne = novas.filter(a=>a.estrelas>=4).length;
+          return (nnc||nne) ? `<span class="pnovas">${nnc?`<span class="nc">${nnc} crítica${nnc>1?'s':''} nova${nnc>1?'s':''}</span>`:''}${nne?`<span class="ne">${nne} elogio${nne>1?'s':''} novo${nne>1?'s':''}</span>`:''}</span>` : '';
+        })()}</b>
         <span class="pstars">${x.av.length ? '★'.repeat(Math.round(x.m))+'☆'.repeat(5-Math.round(x.m))+` ${x.m.toFixed(2)} · ${x.av.length} avaliação(ões) no mês` : 'sem avaliações neste mês'}</span>
         ${coms}
       </div>
@@ -1781,6 +1870,13 @@ function desenharProfsAdmin(){
 function abrirPerfilProf(id){
   const p = profs().find(x=>String(x.id)===String(id));
   if(!p) return;
+  // abriu o perfil = viu as novidades desse membro
+  try{
+    const vp = vistoProfs();
+    vp[String(id)] = new Date().toISOString();
+    localStorage.setItem(KV_P, JSON.stringify(vp));
+    desenharBadges();
+  }catch(e){}
   const av = avalProfs().filter(a=>String(a.prof)===String(id)).slice().reverse(); // mais recentes primeiro
   const m = av.length ? av.reduce((x,a)=>x+a.estrelas,0)/av.length : 0;
   const elogios = av.filter(a=>a.estrelas>=4);
@@ -1857,7 +1953,240 @@ function salvarEdicaoProf(id){
   abrirPerfilProf(id);
   alert('Professor atualizado! A mudança já foi pra nuvem e aparece em todos os aparelhos.');
 }
-function fecharPerfilProf(){ document.getElementById('perfilProf').classList.remove('on'); }
+function fecharPerfilProf(){ document.getElementById('perfilProf').classList.remove('on'); desenharProfsAdmin(); }
+
+/* ================= ROLETA DE PRÊMIOS ================= */
+const KROLETA = 'everest_roleta';
+const KPREMIOS = 'everest_premios';
+let rolFotoPendente = null, emPremio = false, editandoPremio = false, edFotoPendente = null;
+
+function roleta(){ try{ return JSON.parse(localStorage.getItem(KROLETA)||'{}'); }catch(e){ return {}; } }
+function salvarRoletaLocal(r){ localStorage.setItem(KROLETA, JSON.stringify(r)); }
+function premios(){ try{ return JSON.parse(localStorage.getItem(KPREMIOS)||'[]'); }catch(e){ return []; } }
+function pushRoleta(){ if(db) db.collection('config').doc('geral').set({roleta: roleta()}, {merge:true}).catch(()=>{}); }
+
+function toggleRoleta(){
+  const r = roleta();
+  r.ativa = !r.ativa;
+  if(!r.cicloInicio) r.cicloInicio = new Date().toISOString();
+  salvarRoletaLocal(r); pushRoleta(); desenharRoletaAdmin();
+}
+function setLocalRoleta(v){
+  const r = roleta(); r.local = v;
+  salvarRoletaLocal(r); pushRoleta(); desenharRoletaAdmin();
+}
+function salvarRoleta(){
+  const r = roleta();
+  r.nome = document.getElementById('rolNome').value.trim();
+  r.desc = document.getElementById('rolDesc').value.trim();
+  r.alvo = Math.max(0, parseInt(document.getElementById('rolAlvo').value||'0',10)||0);
+  r.regras = document.getElementById('rolRegras').value.trim();
+  if(rolFotoPendente){ r.foto = rolFotoPendente; rolFotoPendente = null; }
+  if(!r.local) r.local = 'academia';
+  if(!r.cicloInicio) r.cicloInicio = new Date().toISOString();
+  salvarRoletaLocal(r); pushRoleta();
+  // limpa o formulário: pronto pra criar outro quando quiser (Editar preenche de volta)
+  document.getElementById('rolNome').value = '';
+  document.getElementById('rolDesc').value = '';
+  document.getElementById('rolAlvo').value = '';
+  document.getElementById('rolRegras').value = '';
+  desenharRoletaAdmin();
+  alert('Prêmio salvo e sincronizado! Confira o card "Prêmio atual" aí em cima.');
+}
+document.getElementById('rolFoto').addEventListener('change', e=>{
+  const f = e.target.files[0];
+  e.target.value = '';
+  if(!f) return;
+  abrirAjusteFoto(f, url=>{
+    if(url){ rolFotoPendente = url; document.getElementById('rolFotoStatus').textContent = 'Foto do prêmio pronta — clique em "Salvar roleta".'; }
+    else document.getElementById('rolFotoStatus').textContent = 'Ajuste cancelado.';
+  });
+});
+function desenharRoletaAdmin(){
+  const btn = document.getElementById('btnRoletaToggle');
+  if(!btn) return;
+  const r = roleta();
+  btn.classList.toggle('on', !!r.ativa);
+  document.getElementById('roletaToggleTxt').textContent = r.ativa ? 'ATIVADO — prêmios rodando' : 'DESATIVADO';
+  /* o formulário fica LIVRE pra criar: só é preenchido ao clicar em "Editar" */
+  document.getElementById('rolLocalAcad').style.background = (r.local||'academia')==='academia' ? 'var(--dourado)' : '';
+  document.getElementById('rolLocalAcad').style.color = (r.local||'academia')==='academia' ? '#2a1450' : '';
+  document.getElementById('rolLocalQualquer').style.background = r.local==='qualquer' ? 'var(--dourado)' : '';
+  document.getElementById('rolLocalQualquer').style.color = r.local==='qualquer' ? '#2a1450' : '';
+  const n = r.cicloInicio ? dados().filter(x=>x.ts && x.ts > r.cicloInicio).length : 0;
+  if(!rolFotoPendente) document.getElementById('rolFotoStatus').textContent =
+    (r.foto?'Foto do prêmio salva. ':'Sem foto ainda. ')+`Contagem do ciclo atual: ${n}${r.alvo?` de ${r.alvo}`:''} avaliações.`;
+  // ===== card do prêmio atual (controle do Wilson) =====
+  const temPremio = !!(r.nome || r.foto || r.alvo);
+  const cardPremio = document.getElementById('premioAtual');
+  if(editandoPremio && document.getElementById('edNome')){
+    // formulário de edição em uso: não repinta (preserva o que está sendo digitado)
+  } else if(editandoPremio){
+    cardPremio.innerHTML = `
+      <div class="prof-form" style="flex-direction:column;align-items:stretch">
+        <input class="campo" id="edNome" autocomplete="off" value="${escHtml(r.nome||'')}" placeholder="Nome do prêmio" style="margin:0">
+        <input class="campo" id="edDesc" autocomplete="off" value="${escHtml(r.desc||'')}" placeholder="Descrição" style="margin:0">
+        <input class="campo" id="edAlvo" type="number" min="1" value="${r.alvo||''}" placeholder="Meta de avaliações" style="margin:0">
+        <input class="campo" id="edRegras" autocomplete="off" value="${escHtml(r.regras||'')}" placeholder="Regras extras (opcional)" style="margin:0">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <label class="btn-arq" for="edFoto">Trocar foto</label>
+          <input type="file" id="edFoto" accept="image/*" hidden>
+          <button class="btn-arq ouro2" onclick="salvarEdicaoPremio()">Salvar alterações</button>
+          <button class="btn-arq" onclick="cancelarEdicaoPremio()">Cancelar</button>
+        </div>
+        <p class="vazio" id="edFotoStatus" style="padding:4px 0 0">Editar NÃO zera o progresso do ciclo (${n}${r.alvo?` de ${r.alvo}`:''} continua contando).</p>
+      </div>`;
+    document.getElementById('edFoto').addEventListener('change', ev=>{
+      const f = ev.target.files[0];
+      ev.target.value = '';
+      if(!f) return;
+      abrirAjusteFoto(f, url=>{
+        if(url){ edFotoPendente = url; document.getElementById('edFotoStatus').textContent = 'Foto nova pronta — clique em "Salvar alterações".'; }
+        else document.getElementById('edFotoStatus').textContent = 'Ajuste cancelado — a foto atual continua.';
+      });
+    });
+  } else cardPremio.innerHTML = temPremio ? `
+    <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap">
+      ${r.foto
+        ? `<img src="${r.foto}" alt="" style="width:112px;height:112px;border-radius:16px;object-fit:cover;border:3px solid var(--dourado);flex:none">`
+        : `<div style="width:112px;height:112px;border-radius:16px;border:2px dashed rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;font-weight:800;flex:none;text-align:center">SEM<br>FOTO</div>`}
+      <div style="flex:1;min-width:230px">
+        <b style="font-family:var(--fTitulo);font-style:italic;font-size:26px;letter-spacing:1px">${escHtml(r.nome||'Prêmio sem nome')}</b>
+        ${r.desc?`<p style="margin:4px 0 8px;color:var(--muted);font-weight:600;font-size:14px">${escHtml(r.desc)}</p>`:''}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          <span style="padding:6px 14px;border-radius:99px;font-size:12px;font-weight:900;${r.ativa?'background:rgba(76,217,123,.18);color:var(--bom)':'background:rgba(255,84,112,.15);color:var(--ruim)'}">${r.ativa?'● ATIVO':'● DESATIVADO'}</span>
+          <span style="padding:6px 14px;border-radius:99px;font-size:12px;font-weight:900;background:rgba(255,201,60,.12);color:var(--dourado)">META: ${r.alvo||'—'} AVALIAÇÕES</span>
+          <span style="padding:6px 14px;border-radius:99px;font-size:12px;font-weight:900;background:rgba(147,111,245,.15);color:var(--roxo)">${(r.local||'academia')==='academia'?'SÓ DENTRO DA ACADEMIA':'VALE EM QUALQUER LUGAR'}</span>
+        </div>
+        <div class="linha-media" style="grid-template-columns:150px 1fr 110px;margin-bottom:0">
+          <span>Progresso do ciclo</span>
+          <div class="barra"><i style="width:${r.alvo?Math.min(100,n/r.alvo*100):0}%"></i></div>
+          <span class="val">${n}${r.alvo?` de ${r.alvo}`:''}</span>
+        </div>
+        ${r.regras?`<p style="margin:10px 0 0;font-size:13px;color:var(--dourado);font-weight:700">Regras: ${escHtml(r.regras)}</p>`:''}
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+      <button class="btn-arq ouro2" onclick="testarPremio()">▶ Testar tela do prêmio</button>
+      <button class="btn-arq" onclick="editarPremio()">Editar</button>
+      <button class="btn-arq" style="border-color:rgba(255,84,112,.5);color:var(--ruim)" onclick="excluirPremioConfig()">Excluir prêmio</button>
+    </div>`
+    : `<div class="vazio">Nenhum prêmio criado ainda. Configure abaixo (nome, foto, meta e regras) e clique em "Salvar roleta" — ele aparece aqui com todos os controles.</div>`;
+
+  const lp = premios().slice().reverse();
+  document.getElementById('listaPremios').innerHTML = lp.length ? lp.map(p=>`
+    <div class="premio-linha${p.entregue?' ok':''}">
+      <b class="cod">${escHtml(p.codigo)}</b>
+      <div class="flex1"><b>${escHtml(p.premio||'Prêmio')}</b><br><small>${new Date(p.ts).toLocaleString('pt-BR')}</small></div>
+      <button onclick="marcarEntregue('${p.uid}')">${p.entregue?'Entregue ✓':'Marcar entregue'}</button>
+    </div>`).join('') : '<div class="vazio">Nenhum prêmio gerado ainda.</div>';
+}
+function marcarEntregue(uid){
+  const l = premios();
+  const p = l.find(x=>String(x.uid)===String(uid));
+  if(!p) return;
+  p.entregue = !p.entregue; p.sync = false;
+  localStorage.setItem(KPREMIOS, JSON.stringify(l));
+  salvarNuvem('premios', p);
+  desenharRoletaAdmin();
+}
+function verificarPremio(){
+  const r = roleta();
+  if(!r.ativa || !(r.alvo>0)) return null;
+  const inicio = r.cicloInicio || '';
+  const n = dados().filter(x=>x.ts && x.ts > inicio).length;   // já inclui a avaliação recém-salva
+  if(n < r.alvo) return null;
+  const codigo = 'EVR-' + Math.random().toString(36).slice(2,8).toUpperCase();
+  const reg = { uid: novoUid(), codigo, ts: new Date().toISOString(), premio: r.nome||'Prêmio', entregue:false, sync:false };
+  const l = premios(); l.push(reg);
+  localStorage.setItem(KPREMIOS, JSON.stringify(l));
+  salvarNuvem('premios', reg);
+  r.cicloInicio = reg.ts;   // zera o ciclo pra próxima rodada
+  salvarRoletaLocal(r); pushRoleta();
+  return reg;
+}
+let premioDemo = false;
+function testarPremio(){
+  const r = roleta();
+  if(!r.nome && !r.foto){ alert('Configure e salve o prêmio primeiro.'); return; }
+  premioDemo = true;
+  document.getElementById('painel').classList.remove('on');
+  mostrarPremio({ codigo:'EVR-TESTE', ts:new Date().toISOString() });
+}
+function editarPremio(){
+  editandoPremio = true;
+  edFotoPendente = null;
+  desenharRoletaAdmin();
+  setTimeout(()=>{ const el = document.getElementById('edNome'); if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); el.focus(); } }, 100);
+}
+function cancelarEdicaoPremio(){
+  editandoPremio = false;
+  edFotoPendente = null;
+  desenharRoletaAdmin();
+}
+function salvarEdicaoPremio(){
+  const r = roleta();
+  const nome = (document.getElementById('edNome')?.value||'').trim();
+  if(!nome){ alert('O nome do prêmio não pode ficar vazio.'); return; }
+  r.nome = nome;
+  r.desc = (document.getElementById('edDesc')?.value||'').trim();
+  r.alvo = Math.max(0, parseInt(document.getElementById('edAlvo')?.value||'0',10)||0);
+  r.regras = (document.getElementById('edRegras')?.value||'').trim();
+  if(edFotoPendente){ r.foto = edFotoPendente; edFotoPendente = null; }
+  // cicloInicio NÃO é tocado: o progresso continua de onde estava
+  salvarRoletaLocal(r); pushRoleta();
+  editandoPremio = false;
+  desenharRoletaAdmin();
+  alert('Prêmio atualizado! O progresso do ciclo foi preservado.');
+}
+function excluirPremioConfig(){
+  if(!pedirSenha()) return;
+  if(!confirm('Excluir o prêmio configurado? A roleta será desativada.\n(O histórico de prêmios já gerados continua guardado.)')) return;
+  rolFotoPendente = null; edFotoPendente = null; editandoPremio = false;
+  salvarRoletaLocal({ ativa:false, cicloInicio:new Date().toISOString() });
+  pushRoleta();
+  desenharRoletaAdmin();
+}
+function mostrarPremio(reg){
+  emPremio = true;
+  const r = roleta();
+  telaProf(`<div class="cartao" style="overflow:visible">
+    ${premioDemo?`<p class="sub" style="color:var(--ruim);font-weight:900;letter-spacing:2px;margin-bottom:10px">MODO TESTE — SÓ VOCÊ ESTÁ VENDO · NENHUM PRÊMIO FOI GERADO</p>`:''}
+    <span class="rotulo"><b>PRÊMIO EVEREST</b></span>
+    <h1 class="fim-t" style="font-size:clamp(40px,6.5vw,80px)">PARABÉNS, VOCÊ<br><span class="ouro-txt">GANHOU!</span></h1>
+    ${r.foto?`<img src="${r.foto}" alt="" style="width:150px;height:150px;border-radius:22px;object-fit:cover;border:4px solid var(--dourado);box-shadow:0 0 40px rgba(255,201,60,.5);margin:4px auto 12px;display:block">`:''}
+    <h2 style="font-size:clamp(24px,3vw,36px)">${escHtml(r.nome||'PRÊMIO')}</h2>
+    ${r.desc?`<p class="sub" style="margin-bottom:14px">${escHtml(r.desc)}</p>`:''}
+    <div class="cod-premio">CÓDIGO: <b>${reg.codigo}</b></div>
+    <p class="sub" style="margin:14px auto 12px">${new Date(reg.ts).toLocaleString('pt-BR')}<br><b style="color:var(--texto)">TIRE UMA FOTO DESTA TELA e chame alguém da equipe agora.</b></p>
+    <div class="regras-premio">${(r.local||'academia')==='academia' ? 'VÁLIDO SOMENTE DENTRO DA ACADEMIA, apresentando esta tela.' : 'Prêmio válido conforme as regras abaixo.'}${r.regras?'<br>'+escHtml(r.regras):''}</div>
+    <div class="acoes"><button class="btn vermelho" onclick="fecharPremio()">FECHAR</button></div>
+  </div>`);
+  som('fim'); soltarConfete();
+  setTimeout(soltarConfete, 1600);
+}
+function fecharPremio(){
+  emPremio = false; enviando = false; passo = 0; render();
+  if(premioDemo){ premioDemo = false; abrirPainel(); setAba('roleta'); }   // no teste, volta pro painel do Wilson
+}
+
+/* ================= ALERTAS DE NOVIDADES ================= */
+const KV_C = 'everest_visto_criticas', KV_E = 'everest_visto_elogios', KV_P = 'everest_visto_profs';
+function vistoProfs(){ try{ return JSON.parse(localStorage.getItem(KV_P)||'{}'); }catch(e){ return {}; } }
+function desenharBadges(){
+  const todos = dados();
+  const vc = localStorage.getItem(KV_C)||'';
+  const ve = localStorage.getItem(KV_E)||'';
+  const nc = todos.filter(r=>r.ts && r.ts>vc && eCriticaG(r)).length;
+  const ne = todos.filter(r=>r.ts && r.ts>ve && eElogioG(r)).length;
+  const bc = document.getElementById('badgeCriticas'), be = document.getElementById('badgeElogios');
+  bc.hidden = !nc; bc.textContent = nc ? nc+' nova'+(nc>1?'s':'') : '';
+  be.hidden = !ne; be.textContent = ne ? ne+' novo'+(ne>1?'s':'') : '';
+  const vp = vistoProfs();
+  const nEq = avalProfs().filter(a=>a.ts && a.ts > (vp[String(a.prof)]||'')).length;
+  const bq = document.getElementById('badgeEquipe');
+  bq.hidden = !nEq; bq.textContent = nEq ? nEq+' nova'+(nEq>1?'s':'') : '';
+}
 
 /* ================= START ================= */
 render();

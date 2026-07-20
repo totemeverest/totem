@@ -1583,6 +1583,8 @@ function fazerBackup(){
     avaliacoes: dados(),
     professores: profs(),
     avaliacoes_professores: avalProfs(),
+    premios: premios(),
+    roleta: roleta(),
     prof_ativo: localStorage.getItem(KATIVO)||'0'
   };
   const blob = new Blob([JSON.stringify(bkp)], {type:'application/json'});
@@ -1611,6 +1613,8 @@ document.getElementById('arqRestaurar').addEventListener('change', e=>{
       localStorage.setItem(CHAVE, JSON.stringify(b.avaliacoes));
       localStorage.setItem(KPROF, JSON.stringify(b.professores||[]));
       localStorage.setItem(KAPROF, JSON.stringify(b.avaliacoes_professores||[]));
+      if(b.premios) localStorage.setItem(KPREMIOS, JSON.stringify(b.premios));
+      if(b.roleta) localStorage.setItem(KROLETA, JSON.stringify(b.roleta));
       localStorage.setItem(KATIVO, b.prof_ativo==='1' ? '1' : '0');
       desenharFiltros(); desenharPainel();
       alert('Restauração concluída! Tudo de volta no lugar.');

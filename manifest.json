@@ -4,7 +4,7 @@
   "description": "Avaliação de experiência da Everest Academia",
   "start_url": "./index.html",
   "display": "fullscreen",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#171130",
   "theme_color": "#171130",
   "icons": [

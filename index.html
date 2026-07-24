@@ -373,6 +373,98 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
   .gh-label{flex:none;padding:8px}
   .nps{gap:8px}.nps button{width:clamp(46px,13vw,64px)}
 }
+
+/* ====== TABLET DEITADO (paisagem): tudo compacto, nada cortado ====== */
+@media (orientation:landscape) and (max-height:900px){
+  .topo{padding:9px 24px 2px}
+  .marca img{height:36px}
+  .marca .nome{font-size:18px}
+  .marca .nome small{font-size:8px;letter-spacing:5px;margin-top:2px}
+  .relogio{padding:6px 15px;gap:7px}
+  .relogio svg{width:16px;height:16px}
+  .relogio span{font-size:17px}
+  .progresso{height:7px;margin:6px 24px 0}
+  .tela{padding:6px 26px 10px}
+  .cartao{padding:2px;width:min(1120px,100%)}
+
+  .icone-grande{margin-bottom:2px}
+  .icone-grande svg{width:clamp(34px,5vh,50px);height:clamp(34px,5vh,50px)}
+  .rotulo{padding:5px 15px;margin-bottom:7px}
+  .rotulo b{font-size:11px;letter-spacing:2px}
+  h1{font-size:clamp(28px,6.4vh,54px);margin-bottom:7px}
+  h2{font-size:clamp(20px,4.6vh,36px);margin-bottom:3px}
+  .sub{font-size:clamp(13px,2.3vh,18px);margin-bottom:8px;line-height:1.3}
+
+  .opcoes{gap:10px;margin:2px 0 0}
+  .op{padding:11px 8px;border-radius:15px;font-size:clamp(12px,1.9vh,17px)}
+  .op .fig{margin-bottom:4px}
+  .op .fig svg{width:clamp(30px,5.6vh,48px);height:clamp(30px,5.6vh,48px)}
+  .op::after{bottom:5px;height:2px}
+  .op.sel{transform:translateY(-3px)}
+  .nu{margin-top:7px;padding:8px 20px;font-size:12px}
+  .nu svg{width:16px;height:16px}
+
+  .coment{margin-top:8px}
+  .coment label{font-size:12px;margin-bottom:3px}
+  textarea{height:clamp(46px,9vh,80px);font-size:15px;padding:10px 13px;border-radius:12px}
+  .coment.destaque textarea{height:clamp(62px,13vh,105px);font-size:16px}
+  .chamada-sugestao{padding:6px 16px;margin-bottom:7px;font-size:11px}
+
+  .acoes{margin-top:9px;gap:10px}
+  .btn{padding:12px 30px;font-size:15px;min-width:170px}
+  .voltar{bottom:10px;left:22px;padding:8px 17px;font-size:12px}
+
+  .escolhas{gap:9px}
+  .esc{padding:10px 9px;border-radius:14px;font-size:clamp(12px,2vh,17px)}
+  .esc .fig{margin-bottom:3px}
+  .esc .fig svg{width:clamp(22px,3.8vh,34px);height:clamp(22px,3.8vh,34px)}
+  .grupos-h{gap:7px}
+  .gh-label{flex:0 0 80px;font-size:11px;border-radius:12px;letter-spacing:1px}
+  .gh-ops{gap:8px}
+  .esc.h{padding:8px 7px;font-size:clamp(11px,1.8vh,15px)}
+  .esc.h .fig svg{width:20px;height:20px}
+
+  .nps{gap:8px;margin:3px auto 6px;max-width:700px}
+  .nps button{width:clamp(42px,7.8vh,64px);border-radius:13px;font-size:clamp(17px,3.6vh,26px)}
+  .legenda-nps{gap:7px;margin-bottom:3px}
+  .legenda-nps .lg{padding:5px 12px;font-size:10px}
+
+  .home-logo{width:clamp(64px,14vh,105px);margin-bottom:9px}
+  .toque{margin-top:10px;font-size:11px;letter-spacing:2px}
+  .check{width:clamp(84px,18vh,124px);height:clamp(84px,18vh,124px);margin-bottom:10px}
+  .fim-t{font-size:clamp(30px,8vh,68px);margin-bottom:8px}
+  .fim-s{font-size:clamp(14px,2.7vh,21px)}
+
+  .cod-premio{font-size:clamp(17px,3.6vh,29px);padding:8px 20px;border-radius:11px}
+  .regras-premio{padding:8px 14px;font-size:12px;line-height:1.35}
+  .prof-grid{grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:9px;margin:5px 0 0}
+  .prof-card{padding:9px 7px;font-size:13px;border-radius:14px}
+  .prof-card img,.prof-card .ph svg{width:clamp(52px,11vh,80px);height:clamp(52px,11vh,80px);margin-bottom:5px;border-width:2px}
+  .prof-card .cargo{font-size:10px;margin-top:1px}
+  .prof-foto-grande{margin-bottom:5px}
+  .prof-foto-grande img,.prof-foto-grande .ph svg{width:clamp(64px,13vh,98px);height:clamp(64px,13vh,98px);border-width:3px}
+  .estrelas-sel{gap:7px;margin:3px 0 0}
+  .estrelas-sel button{padding:2px}
+  .estrelas-sel svg{width:clamp(34px,7.6vh,54px);height:clamp(34px,7.6vh,54px)}
+
+  .atrator{gap:12px;padding:16px}
+  .atrator img{width:clamp(64px,14vh,115px)}
+  .atrator .afrase{font-size:clamp(26px,8.4vh,64px);min-height:2.1em}
+  .atrator .acta{padding:11px 24px;font-size:clamp(12px,2.1vh,16px)}
+}
+/* paisagem bem baixinha: aperta mais ainda */
+@media (orientation:landscape) and (max-height:620px){
+  .icone-grande{display:none}
+  .opcoes{gap:8px}
+  .op{padding:8px 6px}
+  .op .fig svg{width:clamp(26px,6vh,40px);height:clamp(26px,6vh,40px)}
+  h1{font-size:clamp(24px,6.6vh,42px)}
+  h2{font-size:clamp(18px,5vh,28px)}
+  textarea{height:clamp(40px,8.4vh,60px)}
+  .btn{padding:10px 24px;font-size:14px}
+  .home-logo{width:clamp(56px,15vh,84px)}
+  .check{width:clamp(70px,19vh,100px);height:clamp(70px,19vh,100px)}
+}
 </style>
 </head>
 <body>

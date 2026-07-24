@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,interactive-widget=resizes-content">
 <meta name="theme-color" content="#14102a">
 <title>Avalie sua Experiência | Everest Academia</title>
 <!-- Modo aplicativo (PWA): instala na tela inicial e abre em tela cheia -->
@@ -452,6 +452,31 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
   .atrator .afrase{font-size:clamp(26px,8.4vh,64px);min-height:2.1em}
   .atrator .acta{padding:11px 24px;font-size:clamp(12px,2.1vh,16px)}
 }
+/* ====== TECLADO DO TABLET ABERTO: libera espaço e mantém o campo à vista ====== */
+body.teclado .icone-grande,
+body.teclado .sub,
+body.teclado .chamada-sugestao,
+body.teclado .toque{display:none}
+body.teclado .tela{align-items:flex-start;padding-top:6px;padding-bottom:6px}
+body.teclado .rotulo{margin-bottom:5px;padding:4px 13px}
+body.teclado .rotulo b{font-size:10px}
+body.teclado h1{font-size:clamp(20px,5vh,32px);margin-bottom:5px}
+body.teclado h2{font-size:clamp(16px,4vh,26px);margin-bottom:5px}
+body.teclado .opcoes{gap:7px}
+body.teclado .op{padding:7px 5px;font-size:11px;letter-spacing:.5px}
+body.teclado .op .fig{margin-bottom:2px}
+body.teclado .op .fig svg{width:26px;height:26px}
+body.teclado .op::after{display:none}
+body.teclado .nu{margin-top:5px;padding:6px 15px;font-size:11px}
+body.teclado .nu svg{width:14px;height:14px}
+body.teclado .coment{margin-top:6px}
+body.teclado .coment label{font-size:11px;margin-bottom:2px}
+body.teclado textarea{height:clamp(44px,16vh,90px);font-size:15px;padding:9px 12px}
+body.teclado .coment.destaque textarea{height:clamp(48px,18vh,100px)}
+body.teclado .acoes{margin-top:7px}
+body.teclado .btn{padding:10px 24px;font-size:14px;min-width:150px}
+body.teclado .voltar{display:none}
+
 /* paisagem bem baixinha: aperta mais ainda */
 @media (orientation:landscape) and (max-height:620px){
   .icone-grande{display:none}
@@ -830,6 +855,48 @@ document.addEventListener('contextmenu', e=>e.preventDefault());
 /* qualquer toque na tela já entra (ou volta) em tela cheia — se o cliente
    arrastar e sair do fullscreen, o próximo toque recupera sozinho */
 document.addEventListener('pointerdown', ()=>telaCheia(), {passive:true});
+
+/* ================= TECLADO DO TABLET =================
+   Quando o teclado abre (principalmente deitado), a tela útil encolhe.
+   Compacta o layout e rola até o campo pra ele nunca ficar escondido. */
+function rolarAteCampo(){
+  const el = document.activeElement;
+  if(el && (el.tagName==='TEXTAREA' || el.tagName==='INPUT')){
+    try{ el.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){ el.scrollIntoView(); }
+  }
+}
+(function(){
+  const vv = window.visualViewport;
+  let alturaCheia = vv ? vv.height : window.innerHeight;
+  function marcar(aberto){
+    if(document.body.classList.contains('teclado') === aberto) return;
+    document.body.classList.toggle('teclado', aberto);
+    if(aberto) setTimeout(rolarAteCampo, 120);
+  }
+  if(vv){
+    vv.addEventListener('resize', ()=>{
+      // teclado ocupando pelo menos 22% da tela = está aberto
+      if(vv.height > alturaCheia) alturaCheia = vv.height;
+      marcar((alturaCheia - vv.height) > alturaCheia*0.22);
+    });
+  }
+  window.addEventListener('orientationchange', ()=>{
+    setTimeout(()=>{ alturaCheia = vv ? vv.height : window.innerHeight; marcar(false); }, 400);
+  });
+  // rede de segurança: foco/desfoco em campo de texto
+  document.addEventListener('focusin', e=>{
+    if(e.target && (e.target.tagName==='TEXTAREA' || e.target.tagName==='INPUT')){
+      marcar(true);
+      setTimeout(rolarAteCampo, 320);
+    }
+  });
+  document.addEventListener('focusout', e=>{
+    setTimeout(()=>{
+      const a = document.activeElement;
+      if(!a || (a.tagName!=='TEXTAREA' && a.tagName!=='INPUT')) marcar(false);
+    }, 120);
+  });
+})();
 
 /* ================= MODO ATRATIVO (vitrine) ================= */
 const FRASES = [

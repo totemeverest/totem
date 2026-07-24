@@ -895,38 +895,38 @@ function rolarAteCampo(){
     try{ el.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){ el.scrollIntoView(); }
   }
 }
+function campoFocado(){
+  const a = document.activeElement;
+  return !!(a && (a.tagName==='TEXTAREA' || a.tagName==='INPUT'));
+}
+function marcarTeclado(aberto){
+  aberto = !!aberto && campoFocado();   // sem campo em foco, nunca é teclado
+  if(document.body.classList.contains('teclado') === aberto) return;
+  document.body.classList.toggle('teclado', aberto);
+  setTimeout(ajustarAoEcra, 80);
+  if(aberto) setTimeout(rolarAteCampo, 120);
+}
 (function(){
   const vv = window.visualViewport;
   let alturaCheia = vv ? vv.height : window.innerHeight;
-  function marcar(aberto){
-    if(document.body.classList.contains('teclado') === aberto) return;
-    document.body.classList.toggle('teclado', aberto);
-    setTimeout(ajustarAoEcra, 80);
-    if(aberto) setTimeout(rolarAteCampo, 120);
-  }
   if(vv){
     vv.addEventListener('resize', ()=>{
-      // teclado ocupando pelo menos 22% da tela = está aberto
       if(vv.height > alturaCheia) alturaCheia = vv.height;
-      marcar((alturaCheia - vv.height) > alturaCheia*0.22);
+      // só considera teclado se a tela encolheu de verdade (>22%) E há campo em foco
+      marcarTeclado((alturaCheia - vv.height) > alturaCheia*0.22);
     });
   }
   window.addEventListener('orientationchange', ()=>{
-    setTimeout(()=>{ alturaCheia = vv ? vv.height : window.innerHeight; marcar(false); }, 400);
+    setTimeout(()=>{ alturaCheia = vv ? vv.height : window.innerHeight; marcarTeclado(false); ajustarAoEcra(); }, 400);
   });
-  // rede de segurança: foco/desfoco em campo de texto
   document.addEventListener('focusin', e=>{
     if(e.target && (e.target.tagName==='TEXTAREA' || e.target.tagName==='INPUT')){
-      marcar(true);
       setTimeout(rolarAteCampo, 320);
+      // aparelho antigo sem visualViewport: usa o foco como sinal
+      if(!vv) marcarTeclado(true);
     }
   });
-  document.addEventListener('focusout', e=>{
-    setTimeout(()=>{
-      const a = document.activeElement;
-      if(!a || (a.tagName!=='TEXTAREA' && a.tagName!=='INPUT')) marcar(false);
-    }, 120);
-  });
+  document.addEventListener('focusout', ()=>setTimeout(()=>marcarTeclado(false), 120));
 })();
 
 /* ================= MODO ATRATIVO (vitrine) ================= */
@@ -993,7 +993,7 @@ function render(){
   div.innerHTML = montar(p);
   [...palco.children].forEach(t=>{ t.classList.add('saindo'); t.classList.remove('ativa'); setTimeout(()=>t.remove(),500); });
   palco.appendChild(div);
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{ div.classList.add('ativa'); ajustarAoEcra(); }));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ div.classList.add('ativa'); marcarTeclado(false); ajustarAoEcra(); }));
 
   const perguntas = PASSOS.filter(x=>!['home','fim'].includes(x.tipo)).length;
   const idx = PASSOS.slice(0,passo).filter(x=>!['home','fim'].includes(x.tipo)).length;
@@ -1845,7 +1845,7 @@ function telaProf(html){
   div.innerHTML = html;
   [...palco.children].forEach(t=>{ t.classList.add('saindo'); t.classList.remove('ativa'); setTimeout(()=>t.remove(),500); });
   palco.appendChild(div);
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{ div.classList.add('ativa'); ajustarAoEcra(); }));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ div.classList.add('ativa'); marcarTeclado(false); ajustarAoEcra(); }));
   document.getElementById('btnVoltar').classList.remove('on');
   document.getElementById('progresso').classList.remove('on');
   resetIdle();

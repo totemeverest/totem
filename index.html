@@ -374,6 +374,18 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
   .nps{gap:8px}.nps button{width:clamp(46px,13vw,64px)}
 }
 
+/* duas colunas nas perguntas com comentário (só em paisagem) */
+.pergunta-2col,.pergunta-2col>div{display:contents}
+@media (orientation:landscape){
+  .cartao{max-height:none;overflow:visible}
+  .pergunta-2col{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:center;margin-top:4px}
+  .pergunta-2col>div{display:block}
+  .pergunta-2col .opcoes{grid-template-columns:repeat(2,1fr);margin:0}
+  .pergunta-2col .coment{margin-top:0;text-align:left}
+  .pergunta-2col .acoes{margin-top:10px}
+  .pergunta-2col .btn{width:100%;min-width:0}
+}
+
 /* ====== TABLET DEITADO (paisagem): tudo compacto, nada cortado ====== */
 @media (orientation:landscape) and (max-height:900px){
   .topo{padding:9px 24px 2px}
@@ -856,6 +868,24 @@ document.addEventListener('contextmenu', e=>e.preventDefault());
    arrastar e sair do fullscreen, o próximo toque recupera sozinho */
 document.addEventListener('pointerdown', ()=>telaCheia(), {passive:true});
 
+/* ================= CABER SEMPRE (sem rolagem, sem corte) =================
+   Se o conteúdo ainda passar da altura disponível, encolhe proporcionalmente. */
+function ajustarAoEcra(){
+  const tela = palco.querySelector('.tela.ativa') || palco.lastElementChild;
+  if(!tela) return;
+  const card = tela.querySelector('.cartao');
+  if(!card) return;
+  card.style.transform = '';
+  const disp = palco.clientHeight - 8;
+  const alt = card.offsetHeight;
+  if(disp > 0 && alt > disp){
+    card.style.transformOrigin = 'center center';
+    card.style.transform = 'scale('+Math.max(0.5, disp/alt)+')';
+  }
+}
+window.addEventListener('resize', ()=>setTimeout(ajustarAoEcra, 60));
+window.addEventListener('orientationchange', ()=>setTimeout(ajustarAoEcra, 450));
+
 /* ================= TECLADO DO TABLET =================
    Quando o teclado abre (principalmente deitado), a tela útil encolhe.
    Compacta o layout e rola até o campo pra ele nunca ficar escondido. */
@@ -871,6 +901,7 @@ function rolarAteCampo(){
   function marcar(aberto){
     if(document.body.classList.contains('teclado') === aberto) return;
     document.body.classList.toggle('teclado', aberto);
+    setTimeout(ajustarAoEcra, 80);
     if(aberto) setTimeout(rolarAteCampo, 120);
   }
   if(vv){
@@ -962,7 +993,7 @@ function render(){
   div.innerHTML = montar(p);
   [...palco.children].forEach(t=>{ t.classList.add('saindo'); t.classList.remove('ativa'); setTimeout(()=>t.remove(),500); });
   palco.appendChild(div);
-  requestAnimationFrame(()=>requestAnimationFrame(()=>div.classList.add('ativa')));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ div.classList.add('ativa'); ajustarAoEcra(); }));
 
   const perguntas = PASSOS.filter(x=>!['home','fim'].includes(x.tipo)).length;
   const idx = PASSOS.slice(0,passo).filter(x=>!['home','fim'].includes(x.tipo)).length;
@@ -996,13 +1027,20 @@ function montar(p){
 
   let corpo = '';
   if(p.tipo==='nota'){
-    corpo = `<div class="opcoes">` + NOTAS.map(n=>
-      `<button class="op${resposta[p.id]===n.v?' sel':''}" data-v="${n.v}" onclick="marcarNota('${p.id}','${n.v}',this,${!!p.coment})"><span class="fig">${IC[n.ic]}</span>${n.v}</button>`).join('') + `</div>`;
-    if(p.nu) corpo += `<button class="nu${resposta[p.id]==='NÃO UTILIZO'?' sel':''}" onclick="marcarNota('${p.id}','NÃO UTILIZO',this,${!!p.coment})">${IC.proibido} NÃO UTILIZO</button>`;
-    if(p.coment) corpo += `
-      <div class="coment"><label>Tem algo que gostaria de nos contar? <i>(opcional)</i></label>
-      <textarea id="txt_${p.coment}" maxlength="400" placeholder="Escreva aqui...">${escHtml(resposta[p.coment]||'')}</textarea></div>
-      <div class="acoes"><button class="btn ouro" id="btnCont" ${resposta[p.id]?'':'disabled'} onclick="continuarComComentario('${p.coment}')">CONTINUAR →</button></div>`;
+    const opcoes = `<div class="opcoes">` + NOTAS.map(n=>
+      `<button class="op${resposta[p.id]===n.v?' sel':''}" data-v="${n.v}" onclick="marcarNota('${p.id}','${n.v}',this,${!!p.coment})"><span class="fig">${IC[n.ic]}</span>${n.v}</button>`).join('') + `</div>`
+      + (p.nu ? `<button class="nu${resposta[p.id]==='NÃO UTILIZO'?' sel':''}" onclick="marcarNota('${p.id}','NÃO UTILIZO',this,${!!p.coment})">${IC.proibido} NÃO UTILIZO</button>` : '');
+    if(p.coment){
+      /* deitado: notas à esquerda, comentário e botão à direita (sem rolagem) */
+      corpo = `<div class="pergunta-2col">
+        <div>${opcoes}</div>
+        <div>
+          <div class="coment"><label>Tem algo que gostaria de nos contar? <i>(opcional)</i></label>
+          <textarea id="txt_${p.coment}" maxlength="400" placeholder="Escreva aqui...">${escHtml(resposta[p.coment]||'')}</textarea></div>
+          <div class="acoes"><button class="btn ouro" id="btnCont" ${resposta[p.id]?'':'disabled'} onclick="continuarComComentario('${p.coment}')">CONTINUAR →</button></div>
+        </div>
+      </div>`;
+    } else corpo = opcoes;
   }
   if(p.tipo==='escolha' && p.id==='horario'){
     const grupos = [['MANHÃ',[0,1]],['TARDE',[2,3]],['NOITE',[4,5,6]]];
@@ -1807,7 +1845,7 @@ function telaProf(html){
   div.innerHTML = html;
   [...palco.children].forEach(t=>{ t.classList.add('saindo'); t.classList.remove('ativa'); setTimeout(()=>t.remove(),500); });
   palco.appendChild(div);
-  requestAnimationFrame(()=>requestAnimationFrame(()=>div.classList.add('ativa')));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{ div.classList.add('ativa'); ajustarAoEcra(); }));
   document.getElementById('btnVoltar').classList.remove('on');
   document.getElementById('progresso').classList.remove('on');
   resetIdle();

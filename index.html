@@ -172,7 +172,8 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 .btn.vermelho{background:linear-gradient(135deg,#ff5470,#e83b5a);color:#fff;box-shadow:0 14px 34px rgba(255,84,112,.45);animation:pulsaVerm 1.5s ease-in-out infinite}
 @keyframes pulsaVerm{0%,100%{box-shadow:0 14px 34px rgba(255,84,112,.45)}50%{box-shadow:0 14px 34px rgba(255,84,112,.45),0 0 0 16px rgba(255,84,112,.14)}}
 @keyframes pulsa{0%,100%{box-shadow:0 14px 34px rgba(255,176,32,.4)}50%{box-shadow:0 14px 34px rgba(255,176,32,.4),0 0 0 16px rgba(255,201,60,.12)}}
-.voltar{position:absolute;left:34px;bottom:26px;z-index:5;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);color:var(--muted);border-radius:99px;padding:13px 26px;font-family:var(--fTexto);font-size:16px;font-weight:800;font-style:italic;cursor:pointer;display:none}
+.voltar{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);color:var(--muted);border-radius:99px;padding:9px 20px;font-family:var(--fTexto);font-size:14px;font-weight:800;font-style:italic;cursor:pointer;display:none;white-space:nowrap}
+.voltar:active{background:rgba(255,255,255,.14)}
 .voltar.on{display:block}
 
 /* tela inicial */
@@ -244,6 +245,25 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 .selo-p.fila{background:rgba(147,111,245,.18);color:var(--roxo)}
 .selo-p.pausado{background:rgba(255,255,255,.08);color:var(--muted)}
 .selo-p.ganho{background:rgba(255,201,60,.15);color:var(--dourado)}
+.selo-p.aguardando{background:rgba(255,162,62,.18);color:var(--regular)}
+/* sub-abas dentro de um bloco */
+.subabas{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.subabas button{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:var(--muted);border-radius:99px;padding:9px 18px;font-family:var(--fTexto);font-size:13px;font-weight:800;font-style:italic;cursor:pointer;transition:.2s}
+.subabas button.on{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:var(--texto)}
+/* depoimentos: uma caixa = uma pessoa */
+.depo{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);border-left-width:4px;border-radius:14px;padding:14px 18px;margin-bottom:14px}
+.depo.neg{border-left-color:var(--ruim)}
+.depo.pos{border-left-color:var(--bom)}
+.depo-topo{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.depo-num{font-family:var(--fTitulo);font-style:italic;font-size:14px;letter-spacing:1.5px;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);padding:4px 12px;border-radius:8px;white-space:nowrap}
+.depo-meta{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.3px}
+.depo-fala{margin-bottom:9px}
+.depo-fala:last-child{margin-bottom:0}
+.depo-fala .assunto{display:inline-block;font-size:10.5px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px}
+.depo.neg .assunto{color:var(--ruim)}
+.depo.pos .assunto{color:var(--bom)}
+.depo-fala p{margin:0;font-size:16px;line-height:1.5;font-weight:600;color:var(--texto)}
+.premio-card.aguardando{border-color:rgba(255,162,62,.5);background:rgba(255,162,62,.05)}
 .selo-p.meta{background:rgba(255,201,60,.12);color:var(--dourado)}
 .selo-p.local{background:rgba(147,111,245,.15);color:var(--roxo)}
 .premio-linha small{color:var(--muted);font-weight:700}
@@ -272,11 +292,11 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 .fb-coms{margin-top:10px;padding:10px 14px;background:rgba(0,0,0,.22);border-radius:10px}
 .fb-coms small{display:block;color:var(--muted);font-size:11px;letter-spacing:1.5px;font-weight:800;text-transform:uppercase;margin-bottom:4px}
 .ver-tudo{margin-top:10px;background:none;border:1px solid rgba(255,255,255,.2);color:var(--muted);border-radius:8px;padding:8px 16px;font-family:var(--fTexto);font-size:12px;font-weight:800;font-style:italic;letter-spacing:1px;cursor:pointer}
-.detalhe{margin-top:10px;background:rgba(0,0,0,.25);border-radius:10px;padding:12px 14px}
-.det-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:2px 18px;font-size:13px}
-.det-grid div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed rgba(255,255,255,.08);padding:5px 0}
-.det-grid span{color:var(--muted)}
-.det-grid b{font-weight:800}
+.detalhe{margin-top:10px;background:rgba(0,0,0,.25);border-radius:12px;padding:14px 16px}
+.det-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:0 26px;font-size:13.5px}
+.det-grid div{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-bottom:1px dashed rgba(255,255,255,.07);padding:7px 0}
+.det-grid span{color:var(--muted);font-weight:600;white-space:nowrap}
+.det-grid b{font-weight:900;text-align:right;letter-spacing:.3px}
 .det-grid b.v-ruim{color:var(--ruim)} .det-grid b.v-reg{color:var(--regular)}
 .det-grid b.v-bom{color:var(--bom)} .det-grid b.v-exc{color:var(--dourado)}
 .det-grid b.v-nu{color:var(--muted);font-weight:600}
@@ -378,7 +398,7 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
   .btn{min-width:0;width:100%}
   .acoes{flex-direction:column-reverse}
   .topo{padding:16px 20px 4px}.progresso{margin:8px 20px 0}.tela{padding:12px 18px 24px}
-  .voltar{left:18px;bottom:18px}
+  .voltar{padding:8px 15px;font-size:12px}
   .marca img{height:44px}.marca .nome{font-size:21px}
   .grupo-h{flex-direction:column;gap:8px}
   .gh-label{flex:none;padding:8px}
@@ -389,12 +409,16 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 .pergunta-2col,.pergunta-2col>div{display:contents}
 @media (orientation:landscape){
   .cartao{max-height:none;overflow:visible}
-  .pergunta-2col{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:center;margin-top:4px}
-  .pergunta-2col>div{display:block}
+  .pergunta-2col{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:stretch;margin-top:6px}
+  .pergunta-2col>div{display:flex;flex-direction:column;justify-content:center;min-width:0}
   .pergunta-2col .opcoes{grid-template-columns:repeat(2,1fr);margin:0}
-  .pergunta-2col .coment{margin-top:0;text-align:left}
-  .pergunta-2col .acoes{margin-top:10px}
-  .pergunta-2col .btn{width:100%;min-width:0}
+  /* coluna do comentário: campo grande ocupando a altura toda */
+  .pergunta-2col .coment{margin:0;text-align:left;flex:1;display:flex;flex-direction:column;min-height:0}
+  .pergunta-2col .coment label{font-size:clamp(13px,1.9vh,16px);margin-bottom:7px;color:var(--texto);font-weight:800;letter-spacing:.3px}
+  .pergunta-2col .coment label i{color:var(--muted);font-weight:600}
+  .pergunta-2col textarea{flex:1;height:auto;min-height:clamp(80px,17vh,150px);font-size:clamp(15px,2.1vh,19px);border-radius:16px;border-width:2px}
+  .pergunta-2col .acoes{margin-top:12px;flex:none}
+  .pergunta-2col .btn{width:100%;min-width:0;padding:clamp(13px,2.4vh,20px) 20px;font-size:clamp(15px,2.2vh,19px)}
 }
 
 /* ====== TABLET DEITADO (paisagem): tudo compacto, nada cortado ====== */
@@ -435,7 +459,7 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 
   .acoes{margin-top:9px;gap:10px}
   .btn{padding:12px 30px;font-size:15px;min-width:170px}
-  .voltar{bottom:10px;left:22px;padding:8px 17px;font-size:12px}
+  .voltar{padding:7px 15px;font-size:12px}
 
   .escolhas{gap:9px}
   .esc{padding:10px 9px;border-radius:14px;font-size:clamp(12px,2vh,17px)}
@@ -498,7 +522,7 @@ body.teclado textarea{height:clamp(44px,16vh,90px);font-size:15px;padding:9px 12
 body.teclado .coment.destaque textarea{height:clamp(48px,18vh,100px)}
 body.teclado .acoes{margin-top:7px}
 body.teclado .btn{padding:10px 24px;font-size:14px;min-width:150px}
-body.teclado .voltar{display:none}
+body.teclado .voltar{padding:6px 12px;font-size:11px}
 
 /* paisagem bem baixinha: aperta mais ainda */
 @media (orientation:landscape) and (max-height:620px){
@@ -533,14 +557,16 @@ body.teclado .voltar{display:none}
       <img class="logo-img" src="logo1.png" alt="Everest">
       <div class="nome">EVEREST<small>ACADEMIA</small></div>
     </div>
-    <div class="relogio">
-      <svg viewBox="0 0 48 48" fill="none" stroke-width="4" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="19"/><path d="M24 13 V24 L32 29"/></svg>
-      <span id="relogio"></span>
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="voltar" id="btnVoltar" onclick="voltar()">← Voltar</button>
+      <div class="relogio">
+        <svg viewBox="0 0 48 48" fill="none" stroke-width="4" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="19"/><path d="M24 13 V24 L32 29"/></svg>
+        <span id="relogio"></span>
+      </div>
     </div>
   </div>
   <div class="progresso" id="progresso"><i id="progFill"></i></div>
   <div class="palco" id="palco"></div>
-  <button class="voltar" id="btnVoltar" onclick="voltar()">← Voltar</button>
 </div>
 
 <div class="confete" id="confete"></div>
@@ -630,10 +656,24 @@ body.teclado .voltar{display:none}
       <div class="bloco"><h3>Notas de indicação (0 a 10)</h3><div id="npsDist"></div></div>
     </div>
     <div id="tab-criticas" class="tab">
-      <div class="bloco"><h3>Críticas e pontos de atenção</h3><div id="criticas"></div></div>
+      <div class="bloco">
+        <div class="subabas">
+          <button class="on" data-s="criticas-cards" onclick="setSub('criticas','cards')">Avaliações completas</button>
+          <button data-s="criticas-coments" onclick="setSub('criticas','coments')">💬 Só os comentários</button>
+        </div>
+        <div id="criticas"></div>
+        <div id="criticasComents" hidden></div>
+      </div>
     </div>
     <div id="tab-elogios" class="tab">
-      <div class="bloco"><h3>Elogios</h3><div id="elogios"></div></div>
+      <div class="bloco">
+        <div class="subabas">
+          <button class="on" data-s="elogios-cards" onclick="setSub('elogios','cards')">Avaliações completas</button>
+          <button data-s="elogios-coments" onclick="setSub('elogios','coments')">💬 Só os comentários</button>
+        </div>
+        <div id="elogios"></div>
+        <div id="elogiosComents" hidden></div>
+      </div>
     </div>
     <div id="tab-professores" class="tab">
       <div class="bloco">
@@ -692,11 +732,7 @@ body.teclado .voltar{display:none}
           <input class="campo" id="rolNome" autocomplete="off" placeholder="Nome do prêmio (ex.: Shake grátis no Quiosque)" style="margin:0">
           <input class="campo" id="rolDesc" autocomplete="off" placeholder="Descrição (ex.: Um shake de whey à sua escolha)" style="margin:0">
           <input class="campo" id="rolAlvo" type="number" min="1" placeholder="Sortear a cada quantas avaliações? (ex.: 200)" style="margin:0">
-          <input class="campo" id="rolRegras" autocomplete="off" placeholder="Regras extras (opcional)" style="margin:0">
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn-arq" id="rolLocalAcad" onclick="setLocalRoleta('academia')">Vale só DENTRO da academia</button>
-            <button class="btn-arq" id="rolLocalQualquer" onclick="setLocalRoleta('qualquer')">Vale em QUALQUER lugar</button>
-          </div>
+          <input class="campo" id="rolRegras" autocomplete="off" placeholder="Regras do prêmio (ex.: Válido só na academia · Retire na recepção em até 7 dias)" style="margin:0">
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn-arq" id="rolRepete" onclick="toggleRepeteNovo()">🔁 Repetir sempre</button>
             <span class="vazio" style="padding:12px 0;font-size:12px">Ligado: recomeça sozinho a cada ganhador (sorteio diário). Desligado: sai uma vez só e trava.</span>
@@ -1147,10 +1183,9 @@ function finalizar(){
   passo = PASSOS.length - 1; render();
   som('fim');
   soltarConfete();
-  const ganhos = verificarPremios();
-  if(ganhos.length){
-    filaPremios = ganhos.slice();
-    setTimeout(mostrarProximoPremio, 2200);   // mostra o obrigado e emenda nos prêmios
+  const premio = verificarPremio();   // no máximo UM por pessoa
+  if(premio){
+    setTimeout(()=>mostrarPremio(premio), 2200);   // mostra o obrigado e emenda no prêmio
   } else {
     setTimeout(()=>{ passo = 0; enviando = false; render(); }, 6000);
   }
@@ -1298,6 +1333,18 @@ function abrirPainel(){
     statusNuvem(FIREBASE_CONFIG.apiKey ? 'Nuvem: sem conexão' : 'Nuvem: desativada');
   }
 }
+/* sub-abas: alterna entre os cards completos e a leitura só dos comentários */
+function setSub(qual, modo){
+  const mapa = {
+    'criticas': [['cards','criticas'],['coments','criticasComents']],
+    'elogios':  [['cards','elogios'],['coments','elogiosComents']]
+  }[qual];
+  if(!mapa) return;
+  mapa.forEach(([m,id])=>{ const el = document.getElementById(id); if(el) el.hidden = (m!==modo); });
+  document.querySelectorAll('.subabas button').forEach(b=>{
+    if(b.dataset.s && b.dataset.s.startsWith(qual+'-')) b.classList.toggle('on', b.dataset.s===qual+'-'+modo);
+  });
+}
 function setAba(t){
   document.querySelectorAll('.abas button').forEach(b=>b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
@@ -1432,6 +1479,10 @@ function desenharPainel(){
     + pagElogios.map(r=>cartaoFeedback(r,'elogio')).join('') + paginacao(elogios.length, pagE, 'E') :
     `<div class="vazio">Ainda sem elogios${filtroAtual!=='TODOS'?' nesse filtro':''}.</div>`;
 
+  // ===== só os comentários, agrupados por assunto =====
+  document.getElementById('criticasComents').innerHTML = comentariosAgrupados(criticas, 'critica');
+  document.getElementById('elogiosComents').innerHTML  = comentariosAgrupados(elogios, 'elogio');
+
   // ===== aba professores =====
   desenharProfsAdmin();
   // ===== roleta e alertas =====
@@ -1439,6 +1490,30 @@ function desenharPainel(){
   desenharBadges();
 }
 
+/* Cada pessoa que escreveu vira um depoimento. Mais humano e sem confusão:
+   uma caixa = uma pessoa, com tudo que ELA escreveu daquele lado. */
+function comentariosAgrupados(lista, tipo){
+  const pessoas = lista.map(r=>{
+    const falas = COMENTS
+      .filter(([id])=>r[id] && String(r[id]).trim() && ladoComentario(r,id)===tipo)
+      .map(([id,nome])=>({nome, txt:String(r[id]).trim()}));
+    return falas.length ? {r, falas} : null;
+  }).filter(Boolean);
+
+  if(!pessoas.length) return `<div class="vazio">Ninguém escreveu nada ${tipo==='critica'?'nas críticas':'nos elogios'}${filtroAtual!=='TODOS'?' nesse filtro':''}.</div>`;
+
+  const totalFalas = pessoas.reduce((s,p)=>s+p.falas.length,0);
+  const cabec = `<div class="vazio" style="padding:0 0 16px">${pessoas.length===1?'1 pessoa escreveu':pessoas.length+' pessoas escreveram'} · ${totalFalas} comentário${totalFalas>1?'s':''} no total</div>`;
+
+  return cabec + pessoas.map(({r,falas})=>`
+    <div class="depo ${tipo==='critica'?'neg':'pos'}">
+      <div class="depo-topo">
+        <span class="depo-num">AVALIAÇÃO #${r.num??'?'}</span>
+        <span class="depo-meta">${r.ts?new Date(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}${r.horario?' &nbsp;·&nbsp; treina '+escHtml(r.horario):''}${r.area?' &nbsp;·&nbsp; '+escHtml(r.area):''}</span>
+      </div>
+      ${falas.map(f=>`<div class="depo-fala"><span class="assunto">${f.nome}</span><p>“${escHtml(f.txt)}”</p></div>`).join('')}
+    </div>`).join('');
+}
 function cartaoFeedback(r, tipo){
   const dt = new Date(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
   let tags = '';
@@ -1457,9 +1532,13 @@ function cartaoFeedback(r, tipo){
   // o comentário segue o clique da própria seção
   const coms = COMENTS.filter(([id])=>r[id] && String(r[id]).trim() && ladoComentario(r,id)===tipo)
     .map(([id,n])=>`<p><b>${n}:</b> “${escHtml(String(r[id]).trim())}”</p>`).join('');
+  // o que essa mesma pessoa escreveu do OUTRO lado (não repete o de cima)
+  const outroLado = tipo==='critica' ? 'elogio' : 'critica';
+  const comsOutro = COMENTS.filter(([id])=>r[id] && String(r[id]).trim() && ladoComentario(r,id)===outroLado)
+    .map(([id,n])=>`<p><b>${n}:</b> “${escHtml(String(r[id]).trim())}”</p>`).join('');
   const corVal = v => v==='RUIM'?'v-ruim':v==='REGULAR'?'v-reg':v==='BOM'?'v-bom':v==='EXCELENTE'?'v-exc':'v-nu';
   const detalhe = `
-    <button class="ver-tudo" onclick="const d=this.nextElementSibling; d.hidden=!d.hidden; this.textContent=d.hidden?'VER AVALIAÇÃO COMPLETA ▾':'FECHAR ▴'">VER AVALIAÇÃO COMPLETA ▾</button>
+    <button class="ver-tudo" onclick="const d=this.nextElementSibling; d.hidden=!d.hidden; this.textContent=d.hidden?'VER TODAS AS RESPOSTAS ▾':'FECHAR ▴'">VER TODAS AS RESPOSTAS ▾</button>
     <div class="detalhe" hidden>
       <div class="det-grid">
         ${CATS.map(([id,n])=>`<div><span>${n}</span><b class="${corVal(r[id])}">${r[id]||'não respondeu'}</b></div>`).join('')}
@@ -1467,7 +1546,7 @@ function cartaoFeedback(r, tipo){
         <div><span>Horário de treino</span><b>${r.horario||'não respondeu'}</b></div>
         <div><span>Indicação (0 a 10)</span><b>${r.nps??'não respondeu'}</b></div>
       </div>
-      ${coms ? `<div class="fb-coms" style="margin-top:10px"><small>Tudo que essa pessoa escreveu:</small>${coms}</div>` : `<p class="vazio" style="padding:8px 0 0">Não escreveu nenhum comentário.</p>`}
+      ${comsOutro ? `<div class="fb-coms" style="margin-top:12px"><small>Essa pessoa também escreveu ${outroLado==='elogio'?'do lado positivo':'do lado negativo'}:</small>${comsOutro}</div>` : ''}
     </div>`;
   return `<div class="${tipo==='critica'?'reclama':'elogio'}">
     <div class="fb-top">
@@ -1638,22 +1717,28 @@ function pedirSenha(){
   return true;
 }
 function apagarColecaoNuvem(col){
+  // marca tudo que existe localmente como excluído (não volta pela nuvem)
+  try{ JSON.parse(localStorage.getItem(chaveLocal(col))||'[]').forEach(r=>{ if(r.uid) marcarExcluido(col, r.uid); }); }catch(e){}
   if(!db) return;
-  db.collection(col).get().then(snap=>{ snap.forEach(doc=>doc.ref.delete().catch(()=>{})); }).catch(()=>{});
+  db.collection(col).get().then(snap=>{
+    snap.forEach(doc=>{ marcarExcluido(col, doc.id); doc.ref.delete().catch(()=>{}); });
+  }).catch(()=>{});
 }
 function apagarTudo(){
   if(!pedirSenha()) return;
-  if(confirm('Apagar TODAS as avaliações da academia + o histórico de prêmios gerados (tablet E nuvem)?\n(Equipe, fotos, avaliações da equipe e os prêmios configurados NÃO são afetados.)') && confirm('Tem certeza mesmo? Salve um backup antes.')){
+  if(confirm('LIMPAR TUDO (tablet E nuvem):\n\n• Todas as avaliações da academia\n• Todos os prêmios criados\n• Todo o histórico de códigos gerados\n\nA EQUIPE (nomes, fotos e avaliações dela) NÃO é afetada.')
+     && confirm('Tem certeza mesmo? Salve um backup antes — não tem como desfazer.')){
     localStorage.removeItem(CHAVE);
-    localStorage.removeItem(KPREMIOS);          // histórico de códigos gerados
+    localStorage.removeItem(KPREMIOS);     // histórico de códigos
+    localStorage.removeItem(KPLISTA);      // prêmios criados
+    localStorage.setItem(KMIGROU, '1');    // impede o prêmio antigo de voltar
+    limparRoletaAntiga();
     apagarColecaoNuvem('avaliacoes');
     apagarColecaoNuvem('premios');
-    // zera os ciclos: os prêmios ativos recomeçam a contar do zero
-    const l = premiosLista();
-    l.forEach(p=>{ if(!p.ganhou){ p.cicloInicio = new Date().toISOString(); p.sync = false; } });
-    salvarListaLocal(l);
-    l.forEach(p=>{ if(p.sync===false) salvarNuvem('premios_config', p); });
+    apagarColecaoNuvem('premios_config');
+    editandoUid = null; rolFotoPendente = null; edFotoPendente = null;
     desenharPainel();
+    alert('Tudo limpo! Avaliações, prêmios e histórico zerados. A equipe continua cadastrada.');
   }
 }
 function apagarAvalProfs(){
@@ -1750,6 +1835,22 @@ function sincronizarPendentes(){
   });
   db.collection('config').doc('geral').set({prof_ativo: localStorage.getItem(KATIVO)||'0'}, {merge:true}).catch(()=>{});
 }
+/* LIXEIRA: guarda o que foi excluído aqui, pra nunca voltar pela nuvem
+   (mesmo se a exclusão remota falhar por falta de internet). */
+const KLIXO = 'everest_excluidos';
+function lixeira(){ try{ return JSON.parse(localStorage.getItem(KLIXO)||'{}'); }catch(e){ return {}; } }
+function marcarExcluido(col, uid){
+  const lx = lixeira();
+  lx[col] = (lx[col]||[]).filter(x=>String(x)!==String(uid));
+  lx[col].push(String(uid));
+  if(lx[col].length > 300) lx[col] = lx[col].slice(-300);
+  localStorage.setItem(KLIXO, JSON.stringify(lx));
+}
+function excluirDaNuvem(col, uid){
+  marcarExcluido(col, uid);
+  if(db) db.collection(col).doc(String(uid)).delete().catch(()=>{});
+}
+
 /* A NUVEM É A FONTE DA VERDADE: o que veio dela substitui a cópia local
    (então exclusões e edições feitas em outro aparelho valem aqui também).
    Só ficam protegidos os registros ainda não enviados (sync !== true). */
@@ -1757,10 +1858,15 @@ function reconciliar(col, snap){
   const k = chaveLocal(col);
   let local = [];
   try{ local = JSON.parse(localStorage.getItem(k)||'[]'); }catch(e){}
-  const pendentes = local.filter(r=>!r.uid || r.sync!==true);   // ainda não subiram: preserva
+  const excluidos = new Set((lixeira()[col]||[]).map(String));
+  const pendentes = local.filter(r=>(!r.uid || r.sync!==true) && !excluidos.has(String(r.uid)));   // ainda não subiram: preserva
   const pendUids = new Set(pendentes.map(r=>String(r.uid)));
   const daNuvem = [];
   snap.forEach(doc=>{
+    if(excluidos.has(String(doc.id))){          // foi excluído aqui: não volta e tenta apagar de novo
+      if(db) db.collection(col).doc(String(doc.id)).delete().catch(()=>{});
+      return;
+    }
     if(!pendUids.has(String(doc.id))){ const d = doc.data(); d.sync = true; daNuvem.push(d); }
   });
   const novo = daNuvem.concat(pendentes);
@@ -1796,8 +1902,10 @@ function ligarTempoReal(){
       localStorage.setItem(KATIVO, String(d.prof_ativo));
       mudou = true;
     }
-    if(d.roleta && JSON.stringify(d.roleta) !== localStorage.getItem(KROLETA)){
-      salvarRoletaLocal(d.roleta);
+    // da nuvem só interessa a chave geral — nunca os campos antigos de prêmio
+    if(d.roleta && !!d.roleta.ativa !== !!roleta().ativa){
+      const r = roleta(); r.ativa = !!d.roleta.ativa;
+      salvarRoletaLocal(r);
       mudou = true;
     }
     if(mudou) aoMudarDados('config');
@@ -2063,7 +2171,7 @@ function delProf(id){
   if(!confirm('Excluir esse professor? As avaliações dele continuam guardadas no histórico.')) return;
   const alvo = profs().find(p=>String(p.id)===String(id));
   localStorage.setItem(KPROF, JSON.stringify(profs().filter(p=>String(p.id)!==String(id))));
-  if(db && alvo && alvo.uid) db.collection('professores').doc(String(alvo.uid)).delete().catch(()=>{});
+  if(alvo && alvo.uid) excluirDaNuvem('professores', alvo.uid);
   desenharProfsAdmin();
 }
 function toggleProf(){
@@ -2107,8 +2215,14 @@ function desenharProfsAdmin(){
   }).sort((a,b)=> b.m-a.m || b.av.length-a.av.length);
 
   document.getElementById('topProfs').innerHTML = lista.length ? ranking.map((x,i)=>{
-    const coms = x.av.filter(a=>a.comentario).slice(-3).reverse()
-      .map(a=>`<p>“${escHtml(a.comentario)}” <small style="color:var(--muted)">— ${'★'.repeat(a.estrelas)}, ${new Date(a.ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</small></p>`).join('');
+    const nEl = x.av.filter(a=>a.estrelas>=4).length, nCr = x.av.filter(a=>a.estrelas<=3).length;
+    const resumo = x.av.length ? `<span class="pnovas" style="margin:5px 0 0;display:flex">
+        ${nEl?`<span class="ne">💚 ${nEl} elogio${nEl>1?'s':''}</span>`:''}
+        ${nCr?`<span class="nc">🔴 ${nCr} crítica${nCr>1?'s':''}</span>`:''}
+      </span>` : '';
+    const ultimo = x.av.filter(a=>a.comentario).slice(-1).map(a=>
+      `<p style="margin:7px 0 0"><span style="color:var(--dourado)">${'★'.repeat(a.estrelas)}</span> “${escHtml(a.comentario)}”</p>
+       <small style="color:var(--muted);font-weight:700;font-size:11px">último comentário · toque para ver todos</small>`).join('');
     return `<div class="prof-linha${i===0 && x.av.length ? ' top1' : ''}" onclick="abrirPerfilProf('${x.p.id}')" style="cursor:pointer">
       <b class="rank">${i+1}º</b>
       ${x.p.foto?`<img src="${x.p.foto}" alt="">`:`<span class="ph">${AVATAR}</span>`}
@@ -2119,7 +2233,7 @@ function desenharProfsAdmin(){
           return (nnc||nne) ? `<span class="pnovas">${nnc?`<span class="nc">${nnc} crítica${nnc>1?'s':''} nova${nnc>1?'s':''}</span>`:''}${nne?`<span class="ne">${nne} elogio${nne>1?'s':''} novo${nne>1?'s':''}</span>`:''}</span>` : '';
         })()}</b>
         <span class="pstars">${x.av.length ? '★'.repeat(Math.round(x.m))+'☆'.repeat(5-Math.round(x.m))+` ${x.m.toFixed(2)} · ${x.av.length} avaliação(ões) no mês` : 'sem avaliações neste mês'}</span>
-        ${coms}
+        ${resumo}${ultimo}
       </div>
       <button class="pdel" onclick="event.stopPropagation();delProf('${x.p.id}')">Excluir</button>
     </div>`;
@@ -2215,16 +2329,17 @@ function salvarEdicaoProf(id){
 }
 function fecharPerfilProf(){ document.getElementById('perfilProf').classList.remove('on'); desenharProfsAdmin(); }
 
-/* ================= PRÊMIOS (vários, em fila) =================
-   - Cada prêmio tem sua própria meta e seu próprio ciclo.
-   - O primeiro ATIVO e SEM GANHADOR é o que está "EM RODADA".
-   - Quando alguém ganha, ele é BLOQUEADO (vira histórico) e o
-     próximo da fila começa a contar automaticamente. */
+/* ================= PRÊMIOS =================
+   - Vários prêmios contam AO MESMO TEMPO, cada um com sua meta.
+   - SÓ UM prêmio por pessoa: se dois baterem a meta juntos, o segundo
+     fica AGUARDANDO e sai para o próximo avaliador.
+   - "Contínuo" recomeça sozinho; "1 vez só" trava depois do ganhador. */
 const KROLETA = 'everest_roleta';        // liga/desliga geral
 const KPREMIOS = 'everest_premios';      // códigos gerados (antifraude)
 const KPLISTA = 'everest_premios_lista'; // prêmios cadastrados
+const KMIGROU = 'everest_premio_migrado';// controle interno (não sincroniza)
 let rolFotoPendente = null, emPremio = false, edFotoPendente = null;
-let editandoUid = null, novoLocalPremio = 'academia', novoRepete = true;
+let editandoUid = null, novoRepete = true;
 
 function roleta(){ try{ return JSON.parse(localStorage.getItem(KROLETA)||'{}'); }catch(e){ return {}; } }
 function salvarRoletaLocal(r){ localStorage.setItem(KROLETA, JSON.stringify(r)); }
@@ -2233,17 +2348,29 @@ function premiosLista(){ try{ return JSON.parse(localStorage.getItem(KPLISTA)||'
 function salvarListaLocal(l){ localStorage.setItem(KPLISTA, JSON.stringify(l)); }
 function pushRoleta(){ if(db) db.collection('config').doc('geral').set({roleta: roleta()}, {merge:true}).catch(()=>{}); }
 
-/* traz o prêmio único da versão antiga pra dentro da lista */
+/* Traz o prêmio único da versão antiga pra dentro da lista — UMA VEZ SÓ.
+   (antes ele voltava sozinho toda vez que a página abria: era o prêmio
+   fantasma que não sumia nem excluindo) */
 (function migrarPremioAntigo(){
   try{
+    if(localStorage.getItem(KMIGROU) === '1') return;
     const r = roleta();
     if((r.nome || r.foto || r.alvo) && premiosLista().length===0){
       salvarListaLocal([{ uid:novoUid(), nome:r.nome||'Prêmio', desc:r.desc||'', foto:r.foto||'',
-        alvo:r.alvo||0, regras:r.regras||'', local:r.local||'academia', ativo:true, ordem:1,
-        cicloInicio:r.cicloInicio||new Date().toISOString(), ganhou:false, sync:false }]);
+        alvo:r.alvo||0, regras:r.regras||'', local:r.local||'academia', repete:true, vezes:0,
+        ativo:true, ordem:1, cicloInicio:r.cicloInicio||new Date().toISOString(), ganhou:false, sync:false }]);
     }
-  }catch(e){}
+    localStorage.setItem(KMIGROU, '1');
+    limparRoletaAntiga();
+  }catch(e){ localStorage.setItem(KMIGROU, '1'); }
 })();
+/* apaga os campos de prêmio da config antiga (local e nuvem) */
+function limparRoletaAntiga(){
+  const r = roleta();
+  ['nome','desc','foto','alvo','regras','local','cicloInicio'].forEach(k=>delete r[k]);
+  salvarRoletaLocal(r);
+  if(db) db.collection('config').doc('geral').set({roleta:{ativa: !!r.ativa}}, {merge:true}).catch(()=>{});
+}
 
 function contagemCiclo(p){
   return (p && p.cicloInicio) ? dados().filter(x=>x.ts && x.ts > p.cicloInicio).length : 0;
@@ -2270,7 +2397,6 @@ function addPremio(){
     desc: document.getElementById('rolDesc').value.trim(),
     alvo: Math.max(0, parseInt(document.getElementById('rolAlvo').value||'0',10)||0),
     regras: document.getElementById('rolRegras').value.trim(),
-    local: novoLocalPremio || 'academia',
     foto: rolFotoPendente || '',
     repete: !!novoRepete, vezes: 0,
     ativo: true, ordem: (l.reduce((m,x)=>Math.max(m, x.ordem||0), 0) + 1),
@@ -2290,7 +2416,6 @@ function toggleRoleta(){
   const r = roleta(); r.ativa = !r.ativa;
   salvarRoletaLocal(r); pushRoleta(); desenharRoletaAdmin();
 }
-function setLocalRoleta(v){ novoLocalPremio = v; desenharRoletaAdmin(); }
 function toggleRepeteNovo(){ novoRepete = !novoRepete; desenharRoletaAdmin(); }
 function toggleRepetePremio(uid){
   const l = premiosLista(), p = l.find(x=>String(x.uid)===String(uid));
@@ -2309,7 +2434,7 @@ function excluirPremio(uid){
   const p = premiosLista().find(x=>String(x.uid)===String(uid));
   if(!confirm('Excluir "'+((p&&p.nome)||'prêmio')+'"?\n(Os códigos já gerados continuam no histórico.)')) return;
   salvarListaLocal(premiosLista().filter(x=>String(x.uid)!==String(uid)));
-  if(db) db.collection('premios_config').doc(String(uid)).delete().catch(()=>{});
+  excluirDaNuvem('premios_config', uid);
   if(String(editandoUid)===String(uid)) editandoUid = null;
   desenharRoletaAdmin();
 }
@@ -2338,11 +2463,6 @@ function desenharRoletaAdmin(){
   const r = roleta();
   btn.classList.toggle('on', !!r.ativa);
   document.getElementById('roletaToggleTxt').textContent = r.ativa ? 'ATIVADO — prêmios rodando' : 'DESATIVADO';
-  const acad = (novoLocalPremio||'academia')==='academia';
-  document.getElementById('rolLocalAcad').style.background = acad ? 'var(--dourado)' : '';
-  document.getElementById('rolLocalAcad').style.color = acad ? '#2a1450' : '';
-  document.getElementById('rolLocalQualquer').style.background = !acad ? 'var(--dourado)' : '';
-  document.getElementById('rolLocalQualquer').style.color = !acad ? '#2a1450' : '';
   const btnRep = document.getElementById('rolRepete');
   if(btnRep){
     btnRep.style.background = novoRepete ? 'var(--dourado)' : '';
@@ -2371,11 +2491,7 @@ function desenharRoletaAdmin(){
           <input class="campo" id="edNome" autocomplete="off" value="${escHtml(p.nome||'')}" placeholder="Nome do prêmio" style="margin:0">
           <input class="campo" id="edDesc" autocomplete="off" value="${escHtml(p.desc||'')}" placeholder="Descrição" style="margin:0">
           <input class="campo" id="edAlvo" type="number" min="1" value="${p.alvo||''}" placeholder="Meta de avaliações" style="margin:0">
-          <input class="campo" id="edRegras" autocomplete="off" value="${escHtml(p.regras||'')}" placeholder="Regras extras (opcional)" style="margin:0">
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn-arq" id="edLocalA" onclick="setLocalEdicao('academia')">Vale só DENTRO da academia</button>
-            <button class="btn-arq" id="edLocalQ" onclick="setLocalEdicao('qualquer')">Vale em QUALQUER lugar</button>
-          </div>
+          <input class="campo" id="edRegras" autocomplete="off" value="${escHtml(p.regras||'')}" placeholder="Regras do prêmio" style="margin:0">
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <label class="btn-arq" for="edFoto">Trocar foto</label>
             <input type="file" id="edFoto" accept="image/*" hidden>
@@ -2384,10 +2500,6 @@ function desenharRoletaAdmin(){
           </div>
           <p class="vazio" id="edFotoStatus" style="padding:4px 0 0">Editar NÃO zera o progresso do ciclo (${contagemCiclo(p)}${p.alvo?` de ${p.alvo}`:''} continua contando).</p>
         </div>`;
-      const la = document.getElementById('edLocalA'), lq = document.getElementById('edLocalQ');
-      const ac = (p.local||'academia')==='academia';
-      la.style.background = ac?'var(--dourado)':''; la.style.color = ac?'#2a1450':'';
-      lq.style.background = !ac?'var(--dourado)':''; lq.style.color = !ac?'#2a1450':'';
       document.getElementById('edFoto').addEventListener('change', ev=>{
         const f = ev.target.files[0];
         ev.target.value = '';
@@ -2404,12 +2516,13 @@ function desenharRoletaAdmin(){
       const n = contagemCiclo(p);
       const selo = p.ganhou
         ? `<span class="selo-p ganho">🔒 GANHO ${p.ganhouTs?'em '+new Date(p.ganhouTs).toLocaleDateString('pt-BR'):''}${p.codigo?' · '+escHtml(p.codigo):''}</span>`
+        : (emRodada && p.aguardando) ? `<span class="selo-p aguardando">⏳ SAI PARA O PRÓXIMO AVALIADOR</span>`
         : emRodada ? `<span class="selo-p rodando">● CONTANDO AGORA</span>`
         : `<span class="selo-p pausado">● PAUSADO</span>`;
       const seloRep = p.ganhou ? '' : (p.repete
         ? `<span class="selo-p fila">🔁 CONTÍNUO${p.vezes?` · já saiu ${p.vezes}x`:''}</span>`
         : `<span class="selo-p pausado">1 VEZ SÓ</span>`);
-      return `<div class="premio-card${p.ganhou?' ganho':emRodada?' rodando':''}">
+      return `<div class="premio-card${p.ganhou?' ganho':(emRodada&&p.aguardando)?' aguardando':emRodada?' rodando':''}">
         <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
           ${p.foto
             ? `<img src="${p.foto}" alt="" style="width:92px;height:92px;border-radius:14px;object-fit:cover;border:3px solid ${p.ganhou?'rgba(255,255,255,.2)':'var(--dourado)'};flex:none">`
@@ -2420,12 +2533,13 @@ function desenharRoletaAdmin(){
             <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px">
               ${selo}${seloRep}
               <span class="selo-p meta">A CADA ${p.alvo||'—'} AVALIAÇÕES</span>
-              <span class="selo-p local">${(p.local||'academia')==='academia'?'SÓ NA ACADEMIA':'QUALQUER LUGAR'}</span>
             </div>
-            ${emRodada ? `<div class="linha-media" style="grid-template-columns:130px 1fr 100px;margin-bottom:0">
+            ${emRodada ? (p.aguardando
+              ? `<p style="margin:0;font-size:13px;color:var(--regular);font-weight:800">Meta batida! Está na fila — sai para a próxima pessoa que finalizar uma avaliação (uma pessoa não leva dois prêmios).</p>`
+              : `<div class="linha-media" style="grid-template-columns:130px 1fr 100px;margin-bottom:0">
               <span>Progresso</span>
               <div class="barra"><i style="width:${p.alvo?Math.min(100,n/p.alvo*100):0}%"></i></div>
-              <span class="val">${n} de ${p.alvo}</span></div>` : ''}
+              <span class="val">${n} de ${p.alvo}</span></div>`) : ''}
             ${p.regras?`<p style="margin:8px 0 0;font-size:12px;color:var(--dourado);font-weight:700">Regras: ${escHtml(p.regras)}</p>`:''}
           </div>
         </div>
@@ -2443,17 +2557,6 @@ function desenharRoletaAdmin(){
     }).join('') : `<div class="vazio">Nenhum prêmio criado ainda. Use o formulário abaixo — dá pra criar vários, eles entram numa fila e saem um de cada vez.</div>`;
   }
   desenharListaGerados();
-}
-function setLocalEdicao(v){
-  const l = premiosLista(), p = l.find(x=>String(x.uid)===String(editandoUid));
-  if(!p) return;
-  p.local = v; salvarListaLocal(l);
-  const la = document.getElementById('edLocalA'), lq = document.getElementById('edLocalQ');
-  if(la&&lq){
-    const ac = v==='academia';
-    la.style.background = ac?'var(--dourado)':''; la.style.color = ac?'#2a1450':'';
-    lq.style.background = !ac?'var(--dourado)':''; lq.style.color = !ac?'#2a1450':'';
-  }
 }
 function desenharListaGerados(){
   const lp = premios().slice().reverse();
@@ -2473,39 +2576,55 @@ function marcarEntregue(uid){
   salvarNuvem('premios', p);
   desenharRoletaAdmin();
 }
-/* confere TODOS os prêmios ativos de uma vez — pode sair mais de um */
-function verificarPremios(){
-  if(!roleta().ativa) return [];
-  const ganhos = [];
+/* UM prêmio por pessoa: se mais de um bater a meta na mesma avaliação,
+   o primeiro sai agora e os outros ficam AGUARDANDO o próximo avaliador. */
+function verificarPremio(){
+  if(!roleta().ativa) return null;
   const l = premiosLista();
   let mudou = false;
-  premiosAtivos().forEach(p=>{
-    const n = contagemCiclo(p);   // já inclui a avaliação recém-salva
-    if(n < p.alvo) return;
-    const agora = new Date().toISOString();
-    const codigo = 'EVR-' + Math.random().toString(36).slice(2,8).toUpperCase();
-    // guarda uma cópia do prêmio no código gerado (histórico fiel, mesmo se editarem depois)
-    const reg = { uid: novoUid(), codigo, ts: agora, premio: p.nome||'Prêmio', desc: p.desc||'',
-      foto: p.foto||'', regras: p.regras||'', local: p.local||'academia', premioUid: p.uid,
-      entregue:false, sync:false };
-    const lg = premios(); lg.push(reg);
-    localStorage.setItem(KPREMIOS, JSON.stringify(lg));
-    salvarNuvem('premios', reg);
-    ganhos.push(reg);
-    const alvo = l.find(x=>String(x.uid)===String(p.uid));
-    if(alvo){
-      alvo.vezes = (alvo.vezes||0) + 1;
-      alvo.ultimoCodigo = codigo; alvo.ultimoTs = agora;
-      if(alvo.repete){ alvo.cicloInicio = agora; }        // contínuo: recomeça na hora
-      else { alvo.ganhou = true; alvo.codigo = codigo; alvo.ganhouTs = agora; }  // único: bloqueia
-      alvo.sync = false; mudou = true;
-    }
+
+  // quem já está esperando a vez tem prioridade; depois os que bateram a meta agora
+  const prontos = premiosAtivos().filter(p=>{
+    if(p.aguardando) return true;
+    return contagemCiclo(p) >= p.alvo;   // a avaliação recém-salva já entra na conta
   });
+  if(!prontos.length) return null;
+  prontos.sort((a,b)=>{
+    const pa = a.aguardando?0:1, pb = b.aguardando?0:1;
+    return pa-pb || String(a.aguardandoDesde||'').localeCompare(String(b.aguardandoDesde||'')) || (a.ordem||0)-(b.ordem||0);
+  });
+
+  const escolhido = prontos[0];
+  const agora = new Date().toISOString();
+  const codigo = 'EVR-' + Math.random().toString(36).slice(2,8).toUpperCase();
+  // guarda uma cópia do prêmio no código gerado (histórico fiel, mesmo se editarem depois)
+  const reg = { uid: novoUid(), codigo, ts: agora, premio: escolhido.nome||'Prêmio', desc: escolhido.desc||'',
+    foto: escolhido.foto||'', regras: escolhido.regras||'', local: escolhido.local||'academia',
+    premioUid: escolhido.uid, entregue:false, sync:false };
+  const lg = premios(); lg.push(reg);
+  localStorage.setItem(KPREMIOS, JSON.stringify(lg));
+  salvarNuvem('premios', reg);
+
+  const alvo = l.find(x=>String(x.uid)===String(escolhido.uid));
+  if(alvo){
+    alvo.vezes = (alvo.vezes||0) + 1;
+    alvo.ultimoCodigo = codigo; alvo.ultimoTs = agora;
+    alvo.aguardando = false; alvo.aguardandoDesde = null;
+    if(alvo.repete){ alvo.cicloInicio = agora; }        // contínuo: recomeça na hora
+    else { alvo.ganhou = true; alvo.codigo = codigo; alvo.ganhouTs = agora; }  // único: bloqueia
+    alvo.sync = false; mudou = true;
+  }
+  // os demais que bateram a meta ficam na espera, sem gerar código agora
+  prontos.slice(1).forEach(p=>{
+    const a = l.find(x=>String(x.uid)===String(p.uid));
+    if(a && !a.aguardando){ a.aguardando = true; a.aguardandoDesde = agora; a.sync = false; mudou = true; }
+  });
+
   if(mudou){
     salvarListaLocal(l);
     l.forEach(p=>{ if(p.sync===false) salvarNuvem('premios_config', p); });
   }
-  return ganhos;
+  return reg;
 }
 let premioDemo = false;
 function testarPremio(uid){
@@ -2543,33 +2662,25 @@ function salvarEdicaoPremio(){
   desenharRoletaAdmin();
   alert('Prêmio atualizado! O progresso do ciclo foi preservado.');
 }
-let filaPremios = [];
-function mostrarProximoPremio(){
-  const reg = filaPremios.shift();
-  if(!reg){ emPremio=false; enviando=false; passo=0; render(); return; }
-  mostrarPremio(reg);
-}
 function mostrarPremio(reg){
   emPremio = true;
   const local = reg.local || 'academia';
-  const faltam = filaPremios.length;
   telaProf(`<div class="cartao" style="overflow:visible">
     ${premioDemo?`<p class="sub" style="color:var(--ruim);font-weight:900;letter-spacing:2px;margin-bottom:10px">MODO TESTE — SÓ VOCÊ ESTÁ VENDO · NENHUM PRÊMIO FOI GERADO</p>`:''}
-    <span class="rotulo"><b>${faltam?`PRÊMIO 1 DE ${faltam+1}`:'PRÊMIO EVEREST'}</b></span>
+    <span class="rotulo"><b>PRÊMIO EVEREST</b></span>
     <h1 class="fim-t" style="font-size:clamp(36px,6vw,72px)">PARABÉNS, VOCÊ<br><span class="ouro-txt">GANHOU!</span></h1>
     ${reg.foto?`<img src="${reg.foto}" alt="" style="width:clamp(96px,14vh,150px);height:clamp(96px,14vh,150px);border-radius:22px;object-fit:cover;border:4px solid var(--dourado);box-shadow:0 0 40px rgba(255,201,60,.5);margin:4px auto 10px;display:block">`:''}
     <h2 style="font-size:clamp(28px,4.4vw,48px)">${escHtml(reg.premio||'PRÊMIO')}</h2>
     ${reg.desc?`<p class="sub" style="margin-bottom:12px">${escHtml(reg.desc)}</p>`:''}
     <div class="cod-premio">CÓDIGO: <b>${reg.codigo}</b></div>
     <p class="sub" style="margin:12px auto 10px"><b style="color:var(--texto)">TIRE UMA FOTO DESTA TELA e chame alguém da equipe agora.</b><br><small style="opacity:.6">${new Date(reg.ts).toLocaleString('pt-BR')}</small></p>
-    <div class="regras-premio">${local==='academia' ? 'VÁLIDO SOMENTE DENTRO DA ACADEMIA, apresentando esta tela.' : 'Prêmio válido conforme as regras abaixo.'}${reg.regras?'<br>'+escHtml(reg.regras):''}</div>
-    <div class="acoes"><button class="btn ${faltam?'ouro':'vermelho'}" onclick="fecharPremio()">${faltam?`VER PRÓXIMO PRÊMIO (${faltam}) →`:'FECHAR'}</button></div>
+    ${reg.regras?`<div class="regras-premio">${escHtml(reg.regras)}</div>`:''}
+    <div class="acoes"><button class="btn vermelho" onclick="fecharPremio()">FECHAR</button></div>
   </div>`);
   som('fim'); soltarConfete();
   setTimeout(soltarConfete, 1600);
 }
 function fecharPremio(){
-  if(filaPremios.length){ mostrarProximoPremio(); return; }   // ainda tem prêmio pra mostrar
   emPremio = false; enviando = false; passo = 0; render();
   if(premioDemo){ premioDemo = false; abrirPainel(); setAba('roleta'); }   // no teste, volta pro painel do Wilson
 }

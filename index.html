@@ -680,14 +680,14 @@ body.teclado .voltar{display:none}
           <button class="toggle" id="btnRoletaToggle" onclick="toggleRoleta()"></button>
           <b id="roletaToggleTxt" style="font-style:italic;letter-spacing:1px"></b>
         </div>
-        <p class="vazio" style="padding:8px 0 0">Ativada: quando a contagem de avaliações bater a meta, quem completar a avaliação da vez GANHA o prêmio na tela final, com código único.</p>
+        <p class="vazio" style="padding:8px 0 0">Chave geral: liga/desliga TODOS os prêmios de uma vez. Cada prêmio conta suas avaliações em paralelo — quem completar a avaliação que bater a meta ganha, com código único.</p>
       </div>
       <div class="bloco">
-        <h3>Prêmios criados <small style="color:var(--muted);font-weight:600">(saem na ordem da fila, um de cada vez)</small></h3>
+        <h3>Prêmios criados <small style="color:var(--muted);font-weight:600">(todos contam ao mesmo tempo, cada um com sua meta)</small></h3>
         <div id="premioAtual"></div>
       </div>
       <div class="bloco">
-        <h3>Criar novo prêmio <small style="color:var(--muted);font-weight:600">(entra no fim da fila — pra mudar um existente, use Editar no card dele)</small></h3>
+        <h3>Criar novo prêmio <small style="color:var(--muted);font-weight:600">(já começa a contar junto com os outros)</small></h3>
         <div class="prof-form" style="flex-direction:column;align-items:stretch">
           <input class="campo" id="rolNome" autocomplete="off" placeholder="Nome do prêmio (ex.: Shake grátis no Quiosque)" style="margin:0">
           <input class="campo" id="rolDesc" autocomplete="off" placeholder="Descrição (ex.: Um shake de whey à sua escolha)" style="margin:0">
@@ -696,6 +696,10 @@ body.teclado .voltar{display:none}
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn-arq" id="rolLocalAcad" onclick="setLocalRoleta('academia')">Vale só DENTRO da academia</button>
             <button class="btn-arq" id="rolLocalQualquer" onclick="setLocalRoleta('qualquer')">Vale em QUALQUER lugar</button>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn-arq" id="rolRepete" onclick="toggleRepeteNovo()">🔁 Repetir sempre</button>
+            <span class="vazio" style="padding:12px 0;font-size:12px">Ligado: recomeça sozinho a cada ganhador (sorteio diário). Desligado: sai uma vez só e trava.</span>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <label class="btn-arq" for="rolFoto">Foto do prêmio</label>
@@ -1143,9 +1147,10 @@ function finalizar(){
   passo = PASSOS.length - 1; render();
   som('fim');
   soltarConfete();
-  const premio = verificarPremio();
-  if(premio){
-    setTimeout(()=>mostrarPremio(premio), 2200);   // mostra o obrigado e emenda no prêmio
+  const ganhos = verificarPremios();
+  if(ganhos.length){
+    filaPremios = ganhos.slice();
+    setTimeout(mostrarProximoPremio, 2200);   // mostra o obrigado e emenda nos prêmios
   } else {
     setTimeout(()=>{ passo = 0; enviando = false; render(); }, 6000);
   }
@@ -1638,9 +1643,16 @@ function apagarColecaoNuvem(col){
 }
 function apagarTudo(){
   if(!pedirSenha()) return;
-  if(confirm('Apagar TODAS as avaliações da academia (tablet E nuvem)?\n(Equipe, fotos e avaliações da equipe NÃO são afetadas.)') && confirm('Tem certeza mesmo? Salve um backup antes.')){
+  if(confirm('Apagar TODAS as avaliações da academia + o histórico de prêmios gerados (tablet E nuvem)?\n(Equipe, fotos, avaliações da equipe e os prêmios configurados NÃO são afetados.)') && confirm('Tem certeza mesmo? Salve um backup antes.')){
     localStorage.removeItem(CHAVE);
+    localStorage.removeItem(KPREMIOS);          // histórico de códigos gerados
     apagarColecaoNuvem('avaliacoes');
+    apagarColecaoNuvem('premios');
+    // zera os ciclos: os prêmios ativos recomeçam a contar do zero
+    const l = premiosLista();
+    l.forEach(p=>{ if(!p.ganhou){ p.cicloInicio = new Date().toISOString(); p.sync = false; } });
+    salvarListaLocal(l);
+    l.forEach(p=>{ if(p.sync===false) salvarNuvem('premios_config', p); });
     desenharPainel();
   }
 }
@@ -2212,7 +2224,7 @@ const KROLETA = 'everest_roleta';        // liga/desliga geral
 const KPREMIOS = 'everest_premios';      // códigos gerados (antifraude)
 const KPLISTA = 'everest_premios_lista'; // prêmios cadastrados
 let rolFotoPendente = null, emPremio = false, edFotoPendente = null;
-let editandoUid = null, novoLocalPremio = 'academia';
+let editandoUid = null, novoLocalPremio = 'academia', novoRepete = true;
 
 function roleta(){ try{ return JSON.parse(localStorage.getItem(KROLETA)||'{}'); }catch(e){ return {}; } }
 function salvarRoletaLocal(r){ localStorage.setItem(KROLETA, JSON.stringify(r)); }
@@ -2236,19 +2248,18 @@ function pushRoleta(){ if(db) db.collection('config').doc('geral').set({roleta: 
 function contagemCiclo(p){
   return (p && p.cicloInicio) ? dados().filter(x=>x.ts && x.ts > p.cicloInicio).length : 0;
 }
-function premioEmRodada(){
-  const fila = premiosLista().filter(p=>p.ativo && !p.ganhou).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
-  const p = fila[0];
-  if(!p) return null;
-  if(!p.cicloInicio){   // entrou em rodada agora: começa a contar deste momento
-    const l = premiosLista(), alvo = l.find(x=>String(x.uid)===String(p.uid));
-    if(alvo){
-      alvo.cicloInicio = new Date().toISOString(); alvo.sync = false;
-      salvarListaLocal(l); salvarNuvem('premios_config', alvo);
-      return alvo;
-    }
+/* TODOS os prêmios ativos contam ao mesmo tempo, cada um com sua meta */
+function premiosAtivos(){
+  const l = premiosLista();
+  let mudou = false;
+  l.forEach(p=>{
+    if(p.ativo && !p.ganhou && !p.cicloInicio){ p.cicloInicio = new Date().toISOString(); p.sync = false; mudou = true; }
+  });
+  if(mudou){
+    salvarListaLocal(l);
+    l.forEach(p=>{ if(p.sync===false) salvarNuvem('premios_config', p); });
   }
-  return p;
+  return premiosLista().filter(p=>p.ativo && !p.ganhou && p.alvo>0).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
 }
 function addPremio(){
   const nome = document.getElementById('rolNome').value.trim();
@@ -2261,6 +2272,7 @@ function addPremio(){
     regras: document.getElementById('rolRegras').value.trim(),
     local: novoLocalPremio || 'academia',
     foto: rolFotoPendente || '',
+    repete: !!novoRepete, vezes: 0,
     ativo: true, ordem: (l.reduce((m,x)=>Math.max(m, x.ordem||0), 0) + 1),
     cicloInicio: null, ganhou: false, sync: false
   };
@@ -2279,20 +2291,18 @@ function toggleRoleta(){
   salvarRoletaLocal(r); pushRoleta(); desenharRoletaAdmin();
 }
 function setLocalRoleta(v){ novoLocalPremio = v; desenharRoletaAdmin(); }
+function toggleRepeteNovo(){ novoRepete = !novoRepete; desenharRoletaAdmin(); }
+function toggleRepetePremio(uid){
+  const l = premiosLista(), p = l.find(x=>String(x.uid)===String(uid));
+  if(!p || p.ganhou) return;
+  p.repete = !p.repete; p.sync = false;
+  salvarListaLocal(l); salvarNuvem('premios_config', p); desenharRoletaAdmin();
+}
 function togglePremio(uid){
   const l = premiosLista(), p = l.find(x=>String(x.uid)===String(uid));
   if(!p || p.ganhou) return;
   p.ativo = !p.ativo; p.sync = false;
   salvarListaLocal(l); salvarNuvem('premios_config', p); desenharRoletaAdmin();
-}
-function subirPremio(uid){
-  const l = premiosLista().sort((a,b)=>(a.ordem||0)-(b.ordem||0));
-  const i = l.findIndex(x=>String(x.uid)===String(uid));
-  if(i<=0) return;
-  const o = l[i].ordem||0; l[i].ordem = l[i-1].ordem||0; l[i-1].ordem = o;
-  l[i].sync = false; l[i-1].sync = false;
-  salvarListaLocal(l); salvarNuvem('premios_config', l[i]); salvarNuvem('premios_config', l[i-1]);
-  desenharRoletaAdmin();
 }
 function excluirPremio(uid){
   if(!pedirSenha()) return;
@@ -2333,17 +2343,22 @@ function desenharRoletaAdmin(){
   document.getElementById('rolLocalAcad').style.color = acad ? '#2a1450' : '';
   document.getElementById('rolLocalQualquer').style.background = !acad ? 'var(--dourado)' : '';
   document.getElementById('rolLocalQualquer').style.color = !acad ? '#2a1450' : '';
+  const btnRep = document.getElementById('rolRepete');
+  if(btnRep){
+    btnRep.style.background = novoRepete ? 'var(--dourado)' : '';
+    btnRep.style.color = novoRepete ? '#2a1450' : '';
+    btnRep.textContent = novoRepete ? '🔁 Repetir sempre (ligado)' : '🔁 Repetir sempre (desligado)';
+  }
   if(!rolFotoPendente) document.getElementById('rolFotoStatus').textContent =
-    'Cada prêmio tem sua própria meta. Eles saem na ordem da fila, um de cada vez.';
+    'Todos os prêmios ativos contam AO MESMO TEMPO, cada um com sua própria meta.';
 
   // ===== lista de prêmios =====
   const cardPremio = document.getElementById('premioAtual');
   if(editandoUid && document.getElementById('edNome')) return desenharListaGerados();  // editando: não repinta
   const lista = premiosLista();
-  const rodada = premioEmRodada();
-  const ordenada = lista.slice().sort((a,b)=>{
-    const pa = a.ganhou?2:((rodada&&a.uid===rodada.uid)?0:1);
-    const pb = b.ganhou?2:((rodada&&b.uid===rodada.uid)?0:1);
+  premiosAtivos();   // garante que os ativos já estejam contando
+  const ordenada = premiosLista().slice().sort((a,b)=>{
+    const pa = a.ganhou?2:(a.ativo?0:1), pb = b.ganhou?2:(b.ativo?0:1);
     return pa-pb || (a.ordem||0)-(b.ordem||0);
   });
 
@@ -2385,13 +2400,15 @@ function desenharRoletaAdmin(){
     }
   } else {
     cardPremio.innerHTML = ordenada.length ? ordenada.map(p=>{
-      const emRodada = rodada && p.uid===rodada.uid;
+      const emRodada = p.ativo && !p.ganhou;
       const n = contagemCiclo(p);
       const selo = p.ganhou
         ? `<span class="selo-p ganho">🔒 GANHO ${p.ganhouTs?'em '+new Date(p.ganhouTs).toLocaleDateString('pt-BR'):''}${p.codigo?' · '+escHtml(p.codigo):''}</span>`
-        : emRodada ? `<span class="selo-p rodando">● EM RODADA AGORA</span>`
-        : p.ativo ? `<span class="selo-p fila">● NA FILA</span>`
+        : emRodada ? `<span class="selo-p rodando">● CONTANDO AGORA</span>`
         : `<span class="selo-p pausado">● PAUSADO</span>`;
+      const seloRep = p.ganhou ? '' : (p.repete
+        ? `<span class="selo-p fila">🔁 CONTÍNUO${p.vezes?` · já saiu ${p.vezes}x`:''}</span>`
+        : `<span class="selo-p pausado">1 VEZ SÓ</span>`);
       return `<div class="premio-card${p.ganhou?' ganho':emRodada?' rodando':''}">
         <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
           ${p.foto
@@ -2401,8 +2418,8 @@ function desenharRoletaAdmin(){
             <b style="font-family:var(--fTitulo);font-style:italic;font-size:23px;letter-spacing:1px">${escHtml(p.nome||'Sem nome')}</b>
             ${p.desc?`<p style="margin:3px 0 7px;color:var(--muted);font-weight:600;font-size:13px">${escHtml(p.desc)}</p>`:''}
             <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px">
-              ${selo}
-              <span class="selo-p meta">META: ${p.alvo||'—'}</span>
+              ${selo}${seloRep}
+              <span class="selo-p meta">A CADA ${p.alvo||'—'} AVALIAÇÕES</span>
               <span class="selo-p local">${(p.local||'academia')==='academia'?'SÓ NA ACADEMIA':'QUALQUER LUGAR'}</span>
             </div>
             ${emRodada ? `<div class="linha-media" style="grid-template-columns:130px 1fr 100px;margin-bottom:0">
@@ -2419,7 +2436,7 @@ function desenharRoletaAdmin(){
             : `<button class="btn-arq ouro2" onclick="testarPremio('${p.uid}')">▶ Testar tela</button>
                <button class="btn-arq" onclick="editarPremioItem('${p.uid}')">Editar</button>
                <button class="btn-arq" onclick="togglePremio('${p.uid}')">${p.ativo?'Pausar':'Ativar'}</button>
-               ${!emRodada && p.ativo ? `<button class="btn-arq" onclick="subirPremio('${p.uid}')">↑ Subir na fila</button>`:''}`}
+               <button class="btn-arq" onclick="toggleRepetePremio('${p.uid}')">${p.repete?'🔁 Contínuo':'1x Só'}</button>`}
           <button class="btn-arq" style="border-color:rgba(255,84,112,.5);color:var(--ruim)" onclick="excluirPremio('${p.uid}')">Excluir</button>
         </div>
       </div>`;
@@ -2456,29 +2473,39 @@ function marcarEntregue(uid){
   salvarNuvem('premios', p);
   desenharRoletaAdmin();
 }
-function verificarPremio(){
-  if(!roleta().ativa) return null;
-  const p = premioEmRodada();
-  if(!p || !(p.alvo>0)) return null;
-  const n = contagemCiclo(p);   // já inclui a avaliação recém-salva
-  if(n < p.alvo) return null;
-  const agora = new Date().toISOString();
-  const codigo = 'EVR-' + Math.random().toString(36).slice(2,8).toUpperCase();
-  // guarda uma cópia do prêmio no código gerado (histórico fiel, mesmo se editarem depois)
-  const reg = { uid: novoUid(), codigo, ts: agora, premio: p.nome||'Prêmio', desc: p.desc||'',
-    foto: p.foto||'', regras: p.regras||'', local: p.local||'academia', premioUid: p.uid,
-    entregue:false, sync:false };
-  const lg = premios(); lg.push(reg);
-  localStorage.setItem(KPREMIOS, JSON.stringify(lg));
-  salvarNuvem('premios', reg);
-  // bloqueia o prêmio ganho — vira histórico e não pode mais ser editado
-  const l = premiosLista(), alvo = l.find(x=>String(x.uid)===String(p.uid));
-  if(alvo){
-    alvo.ganhou = true; alvo.codigo = codigo; alvo.ganhouTs = agora; alvo.sync = false;
-    salvarListaLocal(l); salvarNuvem('premios_config', alvo);
+/* confere TODOS os prêmios ativos de uma vez — pode sair mais de um */
+function verificarPremios(){
+  if(!roleta().ativa) return [];
+  const ganhos = [];
+  const l = premiosLista();
+  let mudou = false;
+  premiosAtivos().forEach(p=>{
+    const n = contagemCiclo(p);   // já inclui a avaliação recém-salva
+    if(n < p.alvo) return;
+    const agora = new Date().toISOString();
+    const codigo = 'EVR-' + Math.random().toString(36).slice(2,8).toUpperCase();
+    // guarda uma cópia do prêmio no código gerado (histórico fiel, mesmo se editarem depois)
+    const reg = { uid: novoUid(), codigo, ts: agora, premio: p.nome||'Prêmio', desc: p.desc||'',
+      foto: p.foto||'', regras: p.regras||'', local: p.local||'academia', premioUid: p.uid,
+      entregue:false, sync:false };
+    const lg = premios(); lg.push(reg);
+    localStorage.setItem(KPREMIOS, JSON.stringify(lg));
+    salvarNuvem('premios', reg);
+    ganhos.push(reg);
+    const alvo = l.find(x=>String(x.uid)===String(p.uid));
+    if(alvo){
+      alvo.vezes = (alvo.vezes||0) + 1;
+      alvo.ultimoCodigo = codigo; alvo.ultimoTs = agora;
+      if(alvo.repete){ alvo.cicloInicio = agora; }        // contínuo: recomeça na hora
+      else { alvo.ganhou = true; alvo.codigo = codigo; alvo.ganhouTs = agora; }  // único: bloqueia
+      alvo.sync = false; mudou = true;
+    }
+  });
+  if(mudou){
+    salvarListaLocal(l);
+    l.forEach(p=>{ if(p.sync===false) salvarNuvem('premios_config', p); });
   }
-  premioEmRodada();   // o próximo da fila já começa a contar
-  return reg;
+  return ganhos;
 }
 let premioDemo = false;
 function testarPremio(uid){
@@ -2516,12 +2543,19 @@ function salvarEdicaoPremio(){
   desenharRoletaAdmin();
   alert('Prêmio atualizado! O progresso do ciclo foi preservado.');
 }
+let filaPremios = [];
+function mostrarProximoPremio(){
+  const reg = filaPremios.shift();
+  if(!reg){ emPremio=false; enviando=false; passo=0; render(); return; }
+  mostrarPremio(reg);
+}
 function mostrarPremio(reg){
   emPremio = true;
   const local = reg.local || 'academia';
+  const faltam = filaPremios.length;
   telaProf(`<div class="cartao" style="overflow:visible">
     ${premioDemo?`<p class="sub" style="color:var(--ruim);font-weight:900;letter-spacing:2px;margin-bottom:10px">MODO TESTE — SÓ VOCÊ ESTÁ VENDO · NENHUM PRÊMIO FOI GERADO</p>`:''}
-    <span class="rotulo"><b>PRÊMIO EVEREST</b></span>
+    <span class="rotulo"><b>${faltam?`PRÊMIO 1 DE ${faltam+1}`:'PRÊMIO EVEREST'}</b></span>
     <h1 class="fim-t" style="font-size:clamp(36px,6vw,72px)">PARABÉNS, VOCÊ<br><span class="ouro-txt">GANHOU!</span></h1>
     ${reg.foto?`<img src="${reg.foto}" alt="" style="width:clamp(96px,14vh,150px);height:clamp(96px,14vh,150px);border-radius:22px;object-fit:cover;border:4px solid var(--dourado);box-shadow:0 0 40px rgba(255,201,60,.5);margin:4px auto 10px;display:block">`:''}
     <h2 style="font-size:clamp(28px,4.4vw,48px)">${escHtml(reg.premio||'PRÊMIO')}</h2>
@@ -2529,12 +2563,13 @@ function mostrarPremio(reg){
     <div class="cod-premio">CÓDIGO: <b>${reg.codigo}</b></div>
     <p class="sub" style="margin:12px auto 10px"><b style="color:var(--texto)">TIRE UMA FOTO DESTA TELA e chame alguém da equipe agora.</b><br><small style="opacity:.6">${new Date(reg.ts).toLocaleString('pt-BR')}</small></p>
     <div class="regras-premio">${local==='academia' ? 'VÁLIDO SOMENTE DENTRO DA ACADEMIA, apresentando esta tela.' : 'Prêmio válido conforme as regras abaixo.'}${reg.regras?'<br>'+escHtml(reg.regras):''}</div>
-    <div class="acoes"><button class="btn vermelho" onclick="fecharPremio()">FECHAR</button></div>
+    <div class="acoes"><button class="btn ${faltam?'ouro':'vermelho'}" onclick="fecharPremio()">${faltam?`VER PRÓXIMO PRÊMIO (${faltam}) →`:'FECHAR'}</button></div>
   </div>`);
   som('fim'); soltarConfete();
   setTimeout(soltarConfete, 1600);
 }
 function fecharPremio(){
+  if(filaPremios.length){ mostrarProximoPremio(); return; }   // ainda tem prêmio pra mostrar
   emPremio = false; enviando = false; passo = 0; render();
   if(premioDemo){ premioDemo = false; abrirPainel(); setAba('roleta'); }   // no teste, volta pro painel do Wilson
 }

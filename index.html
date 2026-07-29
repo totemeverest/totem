@@ -226,7 +226,11 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 .abas button[data-t="roleta"].on{background:linear-gradient(135deg,#ffa23e,#f08c1e);color:#2a1450;box-shadow:0 8px 22px rgba(255,162,62,.4)}
 /* selo de novidades */
 .tag-nova{display:inline-block;margin-left:8px;background:var(--ruim);color:#fff;border-radius:99px;padding:3px 10px;font-size:11px;font-weight:900;letter-spacing:.5px;vertical-align:middle}
+.tag-nova[hidden],[hidden]{display:none !important}   /* sem isso o selo vazio aparecia como um risquinho */
 .tag-nova.verde{background:var(--bom);color:#0e2417}
+.tag-nova.ouro{background:var(--dourado);color:#2a1450}
+.abas button[data-t="auditoria"]{color:var(--dourado);border-color:rgba(255,201,60,.35)}
+.abas button[data-t="auditoria"].on{background:linear-gradient(135deg,#ffc93c,#ffb020);color:#2a1450;box-shadow:0 8px 22px rgba(255,176,32,.4)}
 .pnovas{display:inline-flex;gap:5px;margin-left:8px;vertical-align:middle}
 .pnovas span{font-size:10px;font-weight:900;padding:2px 8px;border-radius:99px}
 .pnovas .nc{background:rgba(255,84,112,.2);color:var(--ruim)}
@@ -263,6 +267,7 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 .depo.neg .assunto{color:var(--ruim)}
 .depo.pos .assunto{color:var(--bom)}
 .depo-fala p{margin:0;font-size:16px;line-height:1.5;font-weight:600;color:var(--texto)}
+.ctx-notas{display:block;margin-top:4px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.2px;line-height:1.5}
 .premio-card.aguardando{border-color:rgba(255,162,62,.5);background:rgba(255,162,62,.05)}
 .selo-p.meta{background:rgba(255,201,60,.12);color:var(--dourado)}
 .selo-p.local{background:rgba(147,111,245,.15);color:var(--roxo)}
@@ -291,6 +296,15 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 .fb-num{font-family:var(--fTitulo);font-style:italic;font-size:15px;letter-spacing:1.5px;color:#fff;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.15);padding:5px 14px;border-radius:9px;white-space:nowrap}
 .fb-coms{margin-top:10px;padding:10px 14px;background:rgba(0,0,0,.22);border-radius:10px}
 .fb-coms small{display:block;color:var(--muted);font-size:11px;letter-spacing:1.5px;font-weight:800;text-transform:uppercase;margin-bottom:4px}
+.linha-comp{display:grid;grid-template-columns:1fr 110px 110px 120px;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed rgba(255,255,255,.07);font-size:14px}
+.linha-comp .rot{color:var(--muted);font-weight:700}
+.linha-comp .atual{text-align:right;font-size:19px;font-weight:900;font-family:var(--fTitulo);font-style:italic;letter-spacing:.5px}
+.linha-comp .ant{text-align:right;color:var(--muted);font-weight:700}
+.linha-comp .delta{text-align:right;font-size:13px}
+.linha-comp.cab{border-bottom:1px solid rgba(255,255,255,.14);padding-bottom:6px}
+.linha-comp.cab b,.linha-comp.cab span{font-size:11px;letter-spacing:1.5px;font-weight:900;color:var(--muted);font-family:var(--fTexto);font-style:normal}
+.linha-comp.cab .atual{color:var(--dourado)}
+@media(max-width:760px){.linha-comp{grid-template-columns:1fr 70px 60px 70px;font-size:12px;gap:6px}.linha-comp .atual{font-size:15px}}
 .ver-tudo{margin-top:10px;background:none;border:1px solid rgba(255,255,255,.2);color:var(--muted);border-radius:8px;padding:8px 16px;font-family:var(--fTexto);font-size:12px;font-weight:800;font-style:italic;letter-spacing:1px;cursor:pointer}
 .detalhe{margin-top:10px;background:rgba(0,0,0,.25);border-radius:12px;padding:14px 16px}
 .det-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:0 26px;font-size:13.5px}
@@ -623,7 +637,7 @@ body.teclado .voltar{padding:6px 12px;font-size:11px}
     <div class="hbtns">
       <button onclick="atualizarAgora()">⟳ Atualizar dados</button>
       <button style="border-color:rgba(90,162,255,.55);color:#5aa2ff" onclick="atualizarApp()">⬆ Atualizar app</button>
-      <button style="border-color:rgba(255,201,60,.6);color:var(--dourado)" onclick="auditoriaIA()">✦ Auditoria IA</button>
+      <button style="border-color:rgba(255,201,60,.6);color:var(--dourado)" onclick="setAba('auditoria')">✦ Auditoria IA</button>
       <button onclick="compartilharResumo()">Compartilhar resumo</button>
       <button style="border-color:rgba(76,217,123,.5);color:var(--bom)" onclick="fazerBackup()">Salvar backup</button>
       <button onclick="document.getElementById('arqRestaurar').click()">Restaurar</button>
@@ -633,6 +647,12 @@ body.teclado .voltar{padding:6px 12px;font-size:11px}
     </div>
   </header>
   <div class="pcorpo">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+      <input class="campo" id="campoBusca" placeholder="🔍 Buscar palavra nos comentários (ex.: espelho, banheiro, espaço...)"
+        style="flex:1;min-width:260px;margin:0;padding:12px 16px;font-size:15px"
+        oninput="clearTimeout(window._tb);window._tb=setTimeout(()=>setBusca(this.value),350)">
+      <button class="btn-arq" onclick="limparBusca()">Limpar</button>
+    </div>
     <div class="filtros" id="filtroPeriodo"></div>
     <div class="filtros" id="filtros"></div>
     <div class="abas" id="abas">
@@ -642,9 +662,11 @@ body.teclado .voltar{padding:6px 12px;font-size:11px}
       <button data-t="elogios" onclick="setAba('elogios')">Elogios<span class="tag-nova verde" id="badgeElogios" hidden></span></button>
       <button data-t="professores" onclick="setAba('professores')">Equipe<span class="tag-nova" id="badgeEquipe" hidden></span></button>
       <button data-t="roleta" onclick="setAba('roleta')">Prêmios</button>
+      <button data-t="auditoria" onclick="setAba('auditoria')">Auditoria IA<span class="tag-nova ouro" id="badgeAudit" hidden></span></button>
     </div>
     <div id="tab-geral" class="tab on">
       <div class="kpis" id="kpis"></div>
+      <div class="bloco"><h3>Este mês x mês passado <small style="color:var(--muted);font-weight:600">(sempre o total do mês, sem filtros)</small></h3><div id="compMes"></div></div>
       <div class="bloco"><h3>Média por categoria <small style="color:var(--muted);font-weight:600">(1 = Ruim · 4 = Excelente)</small></h3><div id="medias"></div></div>
       <div class="bloco"><h3>Quando o pessoal mais avalia <small style="color:var(--muted);font-weight:600">(volume por turno)</small></h3><div id="volTurno"></div></div>
       <div class="bloco"><h3>Avaliações por horário <small style="color:var(--muted);font-weight:600">(nota da experiência geral)</small></h3><div id="porHorario"></div></div>
@@ -712,6 +734,31 @@ body.teclado .voltar{padding:6px 12px;font-size:11px}
         <button class="pdel" style="padding:12px 20px;font-size:13px" onclick="apagarAvalProfs()">Apagar TODAS as avaliações da equipe</button>
         <p class="vazio" style="padding:8px 0 0">Pede a senha do relatório. Apaga só as avaliações — nomes e fotos continuam. O botão "Apagar dados" lá de cima NÃO mexe na equipe.</p>
       </div>
+    </div>
+    <div id="tab-auditoria" class="tab">
+      <div class="bloco">
+        <h3>Auditoria com Inteligência Artificial</h3>
+        <p class="vazio" style="padding:0 0 14px">Escolha o período que quer analisar. Você tem o controle: se pedir um período já auditado, a IA vai reanalisar aquelas avaliações.</p>
+        <div class="subabas" id="atalhosAudit">
+          <button onclick="atalhoAudit('mes')">Este mês</button>
+          <button onclick="atalhoAudit('mesPassado')">Mês passado</button>
+          <button onclick="atalhoAudit('3meses')">Últimos 3 meses</button>
+          <button onclick="atalhoAudit('desdeUltima')">Desde a última auditoria</button>
+          <button onclick="atalhoAudit('tudo')">Tudo</button>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:6px 0 16px">
+          <label style="color:var(--muted);font-weight:700;font-size:13px">De</label>
+          <input class="campo" type="date" id="auditDe" style="margin:0;width:auto;padding:11px 14px" onchange="desenharAuditoria()">
+          <label style="color:var(--muted);font-weight:700;font-size:13px">até</label>
+          <input class="campo" type="date" id="auditAte" style="margin:0;width:auto;padding:11px 14px" onchange="desenharAuditoria()">
+        </div>
+        <div id="auditStatus"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+          <button class="btn-arq ouro2" id="btnAuditGerar" onclick="auditoriaIA()">✦ Gerar auditoria do período</button>
+        </div>
+        <p class="vazio" style="padding:12px 0 0">O histórico abaixo mostra os períodos que você já analisou — assim você sabe de onde continuar.</p>
+      </div>
+      <div class="bloco"><h3>Auditorias já feitas</h3><div id="auditHist"></div></div>
     </div>
     <div id="tab-roleta" class="tab">
       <div class="bloco">
@@ -1272,17 +1319,97 @@ const temPositivo  = r => CATS.some(([id])=>r[id]==='BOM'||r[id]==='EXCELENTE');
 const semResposta  = r => CATS.some(([id])=>!r[id]);
 const eCriticaG = r => temNegativo(r) || semResposta(r) || !(typeof r.nps==='number') || r.nps<=5;
 const eElogioG  = r => temPositivo(r) || (typeof r.nps==='number' && r.nps>=6);
+/* Para que lado vai o comentário — sempre pelo que a pessoa CLICOU.
+   Atenção: o campo "Atendimento" cobre 4 perguntas (Recepção, Professores,
+   Arena Kids e Quiosque). Nesse caso vale a MAIORIA das notas — senão um
+   único RUIM jogava um elogio evidente para as críticas. */
 function ladoComentario(r, id){
   if(id==='sugestao') return (typeof r.nps==='number' && r.nps>=6) ? 'elogio' : 'critica';
   const cats = COMENT_MAP[id]||[];
-  if(cats.some(c=>r[c]==='RUIM'||r[c]==='REGULAR'||!r[c])) return 'critica';
-  if(cats.some(c=>r[c]==='BOM'||r[c]==='EXCELENTE')) return 'elogio';
-  return 'critica';
+  const neg = cats.filter(c=>r[c]==='RUIM'||r[c]==='REGULAR'||!r[c]).length;
+  const pos = cats.filter(c=>r[c]==='BOM'||r[c]==='EXCELENTE').length;
+  if(!neg && pos) return 'elogio';
+  if(!pos) return 'critica';
+  return pos > neg ? 'elogio' : 'critica';   // empate fica na crítica (mais seguro)
+}
+/* mostra as notas que a pessoa deu naquela parte — tira a dúvida de "por que
+   esse comentário está aqui?" (só aparece quando o campo cobre mais de uma pergunta) */
+function notasDoGrupo(r, id){
+  const cats = COMENT_MAP[id]||[];
+  if(cats.length < 2) return '';
+  const cor = v => v==='RUIM'?'var(--ruim)':v==='REGULAR'?'var(--regular)':v==='BOM'?'var(--bom)':v==='EXCELENTE'?'var(--dourado)':'var(--muted)';
+  return cats.map(c=>{
+    const nome = (CATS.find(([k])=>k===c)||[,c])[1];
+    const v = r[c] || 'não respondeu';
+    return `<span style="color:${cor(r[c])}">${nome}: ${v}</span>`;
+  }).join(' <span style="opacity:.4">·</span> ');
 }
 
 const PERIODOS = [['HOJE','Hoje'],['7D','7 dias'],['30D','30 dias'],['MES','Este mês'],['TUDO','Tudo']];
 const POR_PAGINA = 8;
+const KAUDIT = 'everest_auditorias';   // histórico de auditorias feitas
 let filtroAtual = 'TODOS', periodoAtual = 'TUDO', pagC = 1, pagE = 1;
+let busca = '';
+
+function setBusca(v){
+  busca = (v||'').trim().toLowerCase();
+  pagC = 1; pagE = 1;
+  verTodosComents.critica = verTodosComents.elogio = false;
+  desenharPainel();
+}
+function limparBusca(){ const el = document.getElementById('campoBusca'); if(el) el.value=''; setBusca(''); }
+function casaBusca(r){
+  if(!busca) return true;
+  const alvo = COMENTS.map(([id])=>r[id]||'').join(' ') + ' ' + (r.horario||'') + ' ' + (r.area||'') + ' #' + (r.num||'');
+  return alvo.toLowerCase().includes(busca);
+}
+
+/* ---- auditorias (para não repetir avaliação já analisada) ---- */
+function auditorias(){ try{ return JSON.parse(localStorage.getItem(KAUDIT)||'[]'); }catch(e){ return []; } }
+function ultimaAuditoria(){
+  const l = auditorias().filter(a=>a.ate).sort((a,b)=>String(a.ts).localeCompare(String(b.ts)));
+  return l[l.length-1] || null;
+}
+/* avaliações que ainda NÃO entraram em nenhuma auditoria */
+function avaliacoesNaoAuditadas(){
+  const u = ultimaAuditoria();
+  return dados().filter(r=>r.ts && (!u || r.ts > u.ate));
+}
+/* avaliações dentro do período escolhido na aba Auditoria */
+function avaliacoesDoPeriodoAudit(){
+  const de = (document.getElementById('auditDe')||{}).value || '';
+  const ate = (document.getElementById('auditAte')||{}).value || '';
+  return dados().filter(r=>{
+    if(!r.ts) return false;
+    const dia = r.ts.slice(0,10);
+    if(de && dia < de) return false;
+    if(ate && dia > ate) return false;
+    return true;
+  });
+}
+function atalhoAudit(tipo){
+  const hoje = new Date();
+  const iso = d => d.toISOString().slice(0,10);
+  let de = '', ate = iso(hoje);
+  if(tipo==='mes')          de = iso(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+  else if(tipo==='mesPassado'){
+    de  = iso(new Date(hoje.getFullYear(), hoje.getMonth()-1, 1));
+    ate = iso(new Date(hoje.getFullYear(), hoje.getMonth(), 0));
+  }
+  else if(tipo==='3meses')  de = iso(new Date(hoje.getFullYear(), hoje.getMonth()-2, 1));
+  else if(tipo==='desdeUltima'){
+    const u = ultimaAuditoria();
+    de = u && u.ate ? u.ate.slice(0,10) : '';
+  }
+  else if(tipo==='tudo'){
+    const datas = dados().map(r=>r.ts).filter(Boolean).sort();
+    de = datas.length ? datas[0].slice(0,10) : '';
+  }
+  const elDe = document.getElementById('auditDe'), elAte = document.getElementById('auditAte');
+  if(elDe) elDe.value = de;
+  if(elAte) elAte.value = ate;
+  desenharAuditoria();
+}
 
 function dados(){ try{ return JSON.parse(localStorage.getItem(CHAVE)||'[]'); }catch(e){ return []; } }
 function dentroPeriodo(r){
@@ -1296,7 +1423,7 @@ function dentroPeriodo(r){
   return true;
 }
 function filtrados(){
-  const d = dados().filter(dentroPeriodo);
+  let d = dados().filter(dentroPeriodo).filter(casaBusca);
   if(filtroAtual==='TODOS') return d;
   if(['Manhã','Tarde','Noite'].includes(filtroAtual)) return d.filter(r=>r.turno===filtroAtual);
   return d.filter(r=>r.horario===filtroAtual);
@@ -1397,6 +1524,9 @@ function desenharPainel(){
     <div class="kpi"><small>EXPERIÊNCIA EXCELENTE</small><b>${total?Math.round(exc/total*100)+'%':'—'}</b></div>
     <div class="kpi"><small>CRÍTICAS</small><b class="verm">${nReclama}</b></div>`;
 
+  // ===== comparativo com o mês passado =====
+  desenharComparativo();
+
   // médias
   document.getElementById('medias').innerHTML = CATS.map(([id,nome])=>{
     const vals = d.map(r=>VAL[r[id]]).filter(Boolean);
@@ -1467,9 +1597,9 @@ function desenharPainel(){
   if(pagC > Math.ceil(criticas.length/POR_PAGINA)) pagC = Math.max(1, Math.ceil(criticas.length/POR_PAGINA));
   const pagCriticas = criticas.slice((pagC-1)*POR_PAGINA, pagC*POR_PAGINA);
   document.getElementById('criticas').innerHTML = criticas.length ?
-    `<div class="vazio" style="padding:0 0 10px">${criticas.length} crítica${criticas.length>1?'s':''} no total · mostrando ${POR_PAGINA} por página</div>`
+    `<div class="vazio" style="padding:0 0 10px">${criticas.length} crítica${criticas.length>1?'s':''}${criticas.length>POR_PAGINA?` · mostrando ${POR_PAGINA} por página`:''}${busca?` · busca: "${escHtml(busca)}"`:''}</div>`
     + pagCriticas.map(r=>cartaoFeedback(r,'critica')).join('') + paginacao(criticas.length, pagC, 'C') :
-    `<div class="vazio">Nenhuma crítica${filtroAtual!=='TODOS'?' nesse filtro':''}.</div>`;
+    `<div class="vazio">Nenhuma crítica${busca?' com essa busca':filtroAtual!=='TODOS'?' nesse filtro':''}.</div>`;
 
   const elogios = d.filter(eElogioG).slice().reverse();
   if(pagE > Math.ceil(elogios.length/POR_PAGINA)) pagE = Math.max(1, Math.ceil(elogios.length/POR_PAGINA));
@@ -1485,34 +1615,85 @@ function desenharPainel(){
 
   // ===== aba professores =====
   desenharProfsAdmin();
-  // ===== roleta e alertas =====
+  // ===== roleta, auditoria e alertas =====
   desenharRoletaAdmin();
+  desenharAuditoria();
   desenharBadges();
 }
 
 /* Cada pessoa que escreveu vira um depoimento. Mais humano e sem confusão:
    uma caixa = uma pessoa, com tudo que ELA escreveu daquele lado. */
+const verTodosComents = {critica:false, elogio:false};
 function comentariosAgrupados(lista, tipo){
-  const pessoas = lista.map(r=>{
+  const todas = lista.map(r=>{
     const falas = COMENTS
       .filter(([id])=>r[id] && String(r[id]).trim() && ladoComentario(r,id)===tipo)
-      .map(([id,nome])=>({nome, txt:String(r[id]).trim()}));
+      .map(([id,nome])=>({nome, txt:String(r[id]).trim(), ctx:notasDoGrupo(r,id)}));
     return falas.length ? {r, falas} : null;
   }).filter(Boolean);
 
-  if(!pessoas.length) return `<div class="vazio">Ninguém escreveu nada ${tipo==='critica'?'nas críticas':'nos elogios'}${filtroAtual!=='TODOS'?' nesse filtro':''}.</div>`;
+  if(!todas.length) return `<div class="vazio">Ninguém escreveu nada ${tipo==='critica'?'nas críticas':'nos elogios'}${filtroAtual!=='TODOS'?' nesse filtro':''}.</div>`;
 
-  const totalFalas = pessoas.reduce((s,p)=>s+p.falas.length,0);
-  const cabec = `<div class="vazio" style="padding:0 0 16px">${pessoas.length===1?'1 pessoa escreveu':pessoas.length+' pessoas escreveram'} · ${totalFalas} comentário${totalFalas>1?'s':''} no total</div>`;
+  // mostra as 30 mais recentes; o resto entra ao tocar em "ver mais"
+  const LIMITE = 30;
+  const mostrar = verTodosComents[tipo] ? todas : todas.slice(0, LIMITE);
+  const totalFalas = todas.reduce((s,p)=>s+p.falas.length,0);
+  const cabec = `<div class="vazio" style="padding:0 0 16px">${todas.length===1?'1 pessoa escreveu':todas.length+' pessoas escreveram'} · ${totalFalas} comentário${totalFalas>1?'s':''} no total${mostrar.length<todas.length?` · mostrando as ${LIMITE} mais recentes`:''}</div>`;
+  const rodape = mostrar.length < todas.length
+    ? `<div style="text-align:center;margin-top:6px"><button class="btn-arq" onclick="verTodosComents['${tipo}']=true;desenharPainel()">VER OS ${todas.length-LIMITE} RESTANTES</button></div>` : '';
 
-  return cabec + pessoas.map(({r,falas})=>`
+  return cabec + mostrar.map(({r,falas})=>`
     <div class="depo ${tipo==='critica'?'neg':'pos'}">
       <div class="depo-topo">
         <span class="depo-num">AVALIAÇÃO #${r.num??'?'}</span>
         <span class="depo-meta">${r.ts?new Date(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}${r.horario?' &nbsp;·&nbsp; treina '+escHtml(r.horario):''}${r.area?' &nbsp;·&nbsp; '+escHtml(r.area):''}</span>
       </div>
-      ${falas.map(f=>`<div class="depo-fala"><span class="assunto">${f.nome}</span><p>“${escHtml(f.txt)}”</p></div>`).join('')}
-    </div>`).join('');
+      ${falas.map(f=>`<div class="depo-fala"><span class="assunto">${f.nome}</span><p>“${escHtml(f.txt)}”</p>${f.ctx?`<small class="ctx-notas">notas que essa pessoa deu aqui → ${f.ctx}</small>`:''}</div>`).join('')}
+    </div>`).join('') + rodape;
+}
+/* comparativo do mês atual com o anterior */
+function statsMes(ym){
+  const d = dados().filter(r=>r.ts && r.ts.slice(0,7)===ym);
+  const notas = d.map(r=>r.nps).filter(n=>typeof n==='number');
+  const vals = d.map(r=>VAL[r.geral]).filter(Boolean);
+  return {
+    n: d.length,
+    geral: vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null,
+    ind: notas.length ? notas.reduce((a,b)=>a+b,0)/notas.length : null,
+    criticas: d.filter(eCriticaG).length,
+    exc: d.length ? d.filter(r=>r.geral==='EXCELENTE').length/d.length*100 : null
+  };
+}
+function desenharComparativo(){
+  const el = document.getElementById('compMes');
+  if(!el) return;
+  const hoje = new Date();
+  const ym = s => s.toISOString().slice(0,7);
+  const atual = ym(hoje);
+  const ant = ym(new Date(hoje.getFullYear(), hoje.getMonth()-1, 1));
+  const a = statsMes(atual), b = statsMes(ant);
+  const nomeMes = s => { const [y,m]=s.split('-'); return new Date(y,m-1,1).toLocaleDateString('pt-BR',{month:'long'}); };
+  if(!a.n && !b.n) return el.innerHTML = '<div class="vazio">Ainda não há dados suficientes para comparar meses.</div>';
+
+  const linha = (rot, va, vb, casas, sufixo, maiorEhMelhor)=>{
+    const fmt = v => v===null||v===undefined ? '—' : (casas ? v.toFixed(casas) : Math.round(v))+(sufixo||'');
+    let delta = '';
+    if(va!==null && vb!==null){
+      const dif = va-vb;
+      const bom = maiorEhMelhor ? dif>0 : dif<0;
+      const cor = Math.abs(dif)<0.005 ? 'var(--muted)' : (bom?'var(--bom)':'var(--ruim)');
+      const seta = Math.abs(dif)<0.005 ? '=' : (dif>0?'▲':'▼');
+      delta = `<span style="color:${cor};font-weight:900">${seta} ${casas?Math.abs(dif).toFixed(casas):Math.round(Math.abs(dif))}${sufixo||''}</span>`;
+    } else if(va!==null && vb===null){ delta = '<span style="color:var(--muted)">novo</span>'; }
+    return `<div class="linha-comp"><span class="rot">${rot}</span><b class="atual">${fmt(va)}</b><span class="ant">${fmt(vb)}</span><span class="delta">${delta}</span></div>`;
+  };
+  el.innerHTML = `
+    <div class="linha-comp cab"><span class="rot"></span><b class="atual">${nomeMes(atual).toUpperCase()}</b><span class="ant">${nomeMes(ant).toUpperCase()}</span><span class="delta">variação</span></div>
+    ${linha('Avaliações recebidas', a.n||null, b.n||null, 0, '', true)}
+    ${linha('Nota geral (1 a 4)', a.geral, b.geral, 2, '', true)}
+    ${linha('Indicação média (0 a 10)', a.ind, b.ind, 1, '', true)}
+    ${linha('Experiência excelente', a.exc, b.exc, 0, '%', true)}
+    ${linha('Críticas', a.criticas||null, b.criticas||null, 0, '', false)}`;
 }
 function cartaoFeedback(r, tipo){
   const dt = new Date(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
@@ -1530,12 +1711,14 @@ function cartaoFeedback(r, tipo){
          + ((typeof r.nps==='number'&&r.nps>=6)?`<span>Indicação: ${r.nps}/10</span>`:'');
   }
   // o comentário segue o clique da própria seção
-  const coms = COMENTS.filter(([id])=>r[id] && String(r[id]).trim() && ladoComentario(r,id)===tipo)
-    .map(([id,n])=>`<p><b>${n}:</b> “${escHtml(String(r[id]).trim())}”</p>`).join('');
+  const fala = ([id,n])=>{
+    const ctx = notasDoGrupo(r,id);
+    return `<p><b>${n}:</b> “${escHtml(String(r[id]).trim())}”${ctx?`<br><small class="ctx-notas">notas que essa pessoa deu aqui → ${ctx}</small>`:''}</p>`;
+  };
+  const coms = COMENTS.filter(([id])=>r[id] && String(r[id]).trim() && ladoComentario(r,id)===tipo).map(fala).join('');
   // o que essa mesma pessoa escreveu do OUTRO lado (não repete o de cima)
   const outroLado = tipo==='critica' ? 'elogio' : 'critica';
-  const comsOutro = COMENTS.filter(([id])=>r[id] && String(r[id]).trim() && ladoComentario(r,id)===outroLado)
-    .map(([id,n])=>`<p><b>${n}:</b> “${escHtml(String(r[id]).trim())}”</p>`).join('');
+  const comsOutro = COMENTS.filter(([id])=>r[id] && String(r[id]).trim() && ladoComentario(r,id)===outroLado).map(fala).join('');
   const corVal = v => v==='RUIM'?'v-ruim':v==='REGULAR'?'v-reg':v==='BOM'?'v-bom':v==='EXCELENTE'?'v-exc':'v-nu';
   const detalhe = `
     <button class="ver-tudo" onclick="const d=this.nextElementSibling; d.hidden=!d.hidden; this.textContent=d.hidden?'VER TODAS AS RESPOSTAS ▾':'FECHAR ▴'">VER TODAS AS RESPOSTAS ▾</button>
@@ -1615,10 +1798,16 @@ function copiarTexto(txt){
   ta.remove();
 }
 
-/* ================= AUDITORIA IA ================= */
+/* ================= AUDITORIA IA =================
+   Analisa as avaliações do período escolhido pelo Wilson na aba Auditoria. */
 function auditoriaIA(){
-  const d = filtrados();
-  if(!d.length){ alert('Nenhuma avaliação nesse período/filtro.'); return; }
+  const d = avaliacoesDoPeriodoAudit();
+  const pDe = (document.getElementById('auditDe')||{}).value || '';
+  const pAte = (document.getElementById('auditAte')||{}).value || '';
+  if(!d.length){
+    alert('Nenhuma avaliação nesse período.\n\nEscolha outras datas ou use um dos atalhos acima.');
+    return;
+  }
 
   const datas = d.map(r=>r.ts).filter(Boolean).sort();
   const fmt = ts => new Date(ts).toLocaleDateString('pt-BR');
@@ -1646,8 +1835,13 @@ Analise TODOS os registros e gere um relatório executivo curto e direto para o 
 
 Regras: seja direto, use os números, não invente dados, escreva em português do Brasil.
 
+===== ESCOPO DESTA AUDITORIA =====
+Período escolhido pelo dono: ${pDe?pDe.split('-').reverse().join('/'):'início'} a ${pAte?pAte.split('-').reverse().join('/'):'hoje'}.
+Analise SOMENTE as avaliações listadas abaixo — são as desse período.
+Se algum problema parecer recorrente dentro do período, aponte isso com destaque.
+
 ===== RESUMO DOS NÚMEROS =====
-Período: ${nomePeriodo()} (${faixa})${filtroAtual!=='TODOS'?' · Filtro: '+filtroAtual:''}
+Período: ${faixa}
 Total de avaliações: ${d.length}
 Indicação média (0 a 10): ${mediaInd} | Críticas: ${d.filter(eCritica).length}
 Médias (1 a 4): ${CATS.map(([id,n])=>n+' '+media(id)).join(' · ')}
@@ -1690,7 +1884,15 @@ Não utilizam: ${[['arenakids','Arena Kids'],['quiosque','Quiosque'],['vestiario
   document.body.appendChild(ta); ta.select();
   try{ document.execCommand('copy'); }catch(e){}
   ta.remove();
-  alert('Auditoria pronta! Copiada e baixada em .txt.\nCole em qualquer IA (ChatGPT, Gemini...) — o prompt já vai junto e ela devolve o resumo com plano de ação.');
+
+  // registra no histórico o período auditado
+  const maisNova = d.map(r=>r.ts).filter(Boolean).sort().pop();
+  const reg = { uid: novoUid(), ts: new Date().toISOString(), de: pDe, ate10: pAte, ate: maisNova, qtd: d.length, sync:false };
+  const l = auditorias(); l.push(reg);
+  localStorage.setItem(KAUDIT, JSON.stringify(l));
+  salvarNuvem('auditorias', reg);
+  desenharAuditoria();
+  alert(`Auditoria pronta! Copiada e baixada em .txt.\n\nPeríodo: ${pDe?pDe.split('-').reverse().join('/'):'início'} a ${pAte?pAte.split('-').reverse().join('/'):'hoje'}\n${d.length} avaliação(ões) analisada(s).\n\nCole em qualquer IA (ChatGPT, Gemini...) — o prompt já vai junto.`);
 }
 
 /* ================= CSV ================= */
@@ -1808,7 +2010,7 @@ function atualizarApp(){
 }
 window.addEventListener('online', ()=>{ if(db) sincronizarPendentes(); });
 
-function chaveLocal(col){ return col==='avaliacoes' ? CHAVE : col==='professores' ? KPROF : col==='premios' ? KPREMIOS : col==='premios_config' ? KPLISTA : KAPROF; }
+function chaveLocal(col){ return col==='avaliacoes' ? CHAVE : col==='professores' ? KPROF : col==='premios' ? KPREMIOS : col==='premios_config' ? KPLISTA : col==='auditorias' ? KAUDIT : KAPROF; }
 function novoUid(){ return Date.now()+'-'+Math.random().toString(36).slice(2,8); }
 
 function salvarNuvem(col, obj){
@@ -1826,7 +2028,7 @@ function salvarNuvem(col, obj){
 }
 function sincronizarPendentes(){
   if(!db) return;
-  ['avaliacoes','professores','avaliacoes_professores','premios','premios_config'].forEach(col=>{
+  ['avaliacoes','professores','avaliacoes_professores','premios','premios_config','auditorias'].forEach(col=>{
     try{
       JSON.parse(localStorage.getItem(chaveLocal(col))||'[]')
         .filter(r=>r.uid && r.sync!==true)
@@ -1876,7 +2078,7 @@ function reconciliar(col, snap){
 async function puxarNuvem(){
   if(!db || !nuvemOK) return false;
   try{
-    for(const col of ['avaliacoes','professores','avaliacoes_professores','premios','premios_config']){
+    for(const col of ['avaliacoes','professores','avaliacoes_professores','premios','premios_config','auditorias']){
       reconciliar(col, await db.collection(col).get());
     }
     const cfg = await db.collection('config').doc('geral').get();
@@ -1888,7 +2090,7 @@ async function puxarNuvem(){
 /* TEMPO REAL: qualquer mudança em qualquer aparelho chega aqui na hora */
 function ligarTempoReal(){
   if(!db) return;
-  ['avaliacoes','professores','avaliacoes_professores','premios','premios_config'].forEach(col=>{
+  ['avaliacoes','professores','avaliacoes_professores','premios','premios_config','auditorias'].forEach(col=>{
     db.collection(col).onSnapshot(snap=>{
       reconciliar(col, snap);
       aoMudarDados(col);
@@ -2554,7 +2756,7 @@ function desenharRoletaAdmin(){
           <button class="btn-arq" style="border-color:rgba(255,84,112,.5);color:var(--ruim)" onclick="excluirPremio('${p.uid}')">Excluir</button>
         </div>
       </div>`;
-    }).join('') : `<div class="vazio">Nenhum prêmio criado ainda. Use o formulário abaixo — dá pra criar vários, eles entram numa fila e saem um de cada vez.</div>`;
+    }).join('') : `<div class="vazio">Nenhum prêmio criado ainda. Use o formulário abaixo — dá pra criar vários, e todos contam ao mesmo tempo (cada um com sua meta).</div>`;
   }
   desenharListaGerados();
 }
@@ -2685,6 +2887,48 @@ function fecharPremio(){
   if(premioDemo){ premioDemo = false; abrirPainel(); setAba('roleta'); }   // no teste, volta pro painel do Wilson
 }
 
+/* ================= PAINEL DA AUDITORIA ================= */
+function desenharAuditoria(){
+  const el = document.getElementById('auditStatus');
+  if(!el) return;
+  // primeira vez: já sugere o mês atual
+  const elDe = document.getElementById('auditDe'), elAte = document.getElementById('auditAte');
+  if(elDe && !elDe.value && elAte && !elAte.value){
+    const h = new Date();
+    elDe.value = new Date(h.getFullYear(), h.getMonth(), 1).toISOString().slice(0,10);
+    elAte.value = h.toISOString().slice(0,10);
+  }
+  const d = avaliacoesDoPeriodoAudit();
+  const u = ultimaAuditoria();
+  const criticas = d.filter(eCriticaG).length;
+  const de = elDe ? elDe.value : '', ate = elAte ? elAte.value : '';
+  const jaAuditado = auditorias().some(a=>a.de && a.de===de && a.ate10===ate);
+  const elogios = d.filter(eElogioG).length;
+  const btn = document.getElementById('btnAuditGerar');
+  if(btn){
+    btn.textContent = d.length ? `✦ Gerar auditoria (${d.length} avaliações)` : '✦ Nenhuma avaliação no período';
+    btn.style.opacity = d.length ? '1' : '.45';
+  }
+  el.innerHTML = `
+    <div class="kpis" style="margin-bottom:0">
+      <div class="kpi"><small>VÃO PRA IA</small><b class="ouro">${d.length}</b></div>
+      <div class="kpi"><small>CRÍTICAS NO PERÍODO</small><b class="verm">${criticas}</b></div>
+      <div class="kpi"><small>ELOGIOS NO PERÍODO</small><b style="color:var(--bom)">${elogios}</b></div>
+      <div class="kpi"><small>ÚLTIMA AUDITORIA</small><b style="font-size:19px">${u?new Date(u.ts).toLocaleDateString('pt-BR'):'nunca'}</b></div>
+    </div>
+    ${jaAuditado?`<p class="vazio" style="padding:12px 0 0;color:var(--regular)"><b>⚠ Esse período já foi auditado antes.</b> Pode gerar de novo se quiser — a IA vai reanalisar as mesmas avaliações.</p>`:''}`;
+
+  const hist = auditorias().slice().reverse();
+  const hEl = document.getElementById('auditHist');
+  const fmtD = s => s ? s.split('-').reverse().join('/') : '—';
+  if(hEl) hEl.innerHTML = hist.length ? hist.map(a=>`
+    <div class="premio-linha" style="margin-bottom:8px">
+      <b class="cod" style="min-width:150px">${fmtD(a.de)} a ${fmtD(a.ate10)}</b>
+      <div class="flex1"><b>${a.qtd} avaliação(ões) analisada(s)</b><br>
+        <small>gerada em ${new Date(a.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})}</small></div>
+    </div>`).join('') : '<div class="vazio">Nenhuma auditoria feita ainda.</div>';
+}
+
 /* ================= ALERTAS DE NOVIDADES ================= */
 const KV_C = 'everest_visto_criticas', KV_E = 'everest_visto_elogios', KV_P = 'everest_visto_profs';
 function vistoProfs(){ try{ return JSON.parse(localStorage.getItem(KV_P)||'{}'); }catch(e){ return {}; } }
@@ -2701,6 +2945,9 @@ function desenharBadges(){
   const nEq = avalProfs().filter(a=>a.ts && a.ts > (vp[String(a.prof)]||'')).length;
   const bq = document.getElementById('badgeEquipe');
   bq.hidden = !nEq; bq.textContent = nEq ? nEq+' nova'+(nEq>1?'s':'') : '';
+  // selo da auditoria: quantas avaliações ainda não foram analisadas
+  const ba = document.getElementById('badgeAudit');
+  if(ba){ const nA = avaliacoesNaoAuditadas().length; ba.hidden = !nA; ba.textContent = nA ? nA+' p/ auditar' : ''; }
 }
 
 /* ================= START ================= */

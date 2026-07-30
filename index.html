@@ -1817,23 +1817,80 @@ function auditoriaIA(){
   const media = id => { const vals=d.map(r=>VAL[r[id]]).filter(Boolean); return vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2):'sem dados'; };
   const eCritica = eCriticaG;
 
-  let txt = `===== PROMPT PARA A IA (não apague) =====
-Você é um consultor especialista em experiência do cliente de academias.
-Abaixo estão os dados brutos do totem de avaliação da EVEREST ACADEMIA.
-Escala das notas: RUIM (1), REGULAR (2), BOM (3), EXCELENTE (4). "NÃO UTILIZO" = cliente não usa a área. Indicação = 0 a 10.
-A visão da Everest é ser sempre EXCELENTE — nota BOM já é ponto a evoluir.
-Regra de classificação da Everest: cliques RUIM/REGULAR, indicação 0 a 5 ou pergunta sem resposta = CRÍTICA; cliques BOM/EXCELENTE e indicação 6 a 10 = ELOGIO. A mesma avaliação pode ter os dois lados. O comentário pertence à seção clicada — vale o clique, nunca o texto.
-Objetivo do dono: CONSERTAR o que aparece nas críticas e POTENCIALIZAR o que aparece nos elogios — organize o plano de ação nessa lógica.
+  let txt = `########## INSTRUÇÕES — LEIA E EXECUTE AGORA ##########
 
-Analise TODOS os registros e gere um relatório executivo curto e direto para o dono, com:
-1. RESUMO GERAL — no máximo 3 linhas.
-2. PRINCIPAIS PROBLEMAS — por categoria e por horário/turno, do mais grave ao menos grave.
-3. O QUE OS COMENTÁRIOS REVELAM — temas que se repetem, com citações curtas.
-4. PONTOS FORTES — o que manter e divulgar.
-5. PLANO DE AÇÃO — três blocos: AGIR AGORA / PRÓXIMAS SEMANAS / MONITORAR. Ações práticas, começando pelas de baixo custo.
-6. ALERTAS — tendência de queda, risco de cancelamento ou horário problemático.
+NÃO ME PERGUNTE NADA. NÃO ME OFEREÇA OPÇÕES. NÃO PEÇA CONFIRMAÇÃO.
+Assim que ler este arquivo, ESCREVA O RELATÓRIO COMPLETO descrito abaixo, do começo ao fim, na sua primeira resposta.
 
-Regras: seja direto, use os números, não invente dados, escreva em português do Brasil.
+QUEM VAI LER: Wilson, dono da Everest Academia. Ele NÃO é técnico e NÃO tem tempo.
+Escreva como se estivesse explicando para um amigo esperto que não entende de dados:
+frases curtas, zero jargão, zero termos em inglês, nada de "NPS", "churn", "KPI", "benchmark".
+Sempre que citar um número, EXPLIQUE o que ele significa na prática.
+   Exemplo ruim:  "NPS 9,7 com 20 detratores."
+   Exemplo bom:   "Em média as pessoas dão nota 9,7 de 10 para indicar a Everest a um amigo — é uma nota muito alta. Mesmo assim, 20 avaliações trouxeram algum ponto negativo, e é neles que está o dinheiro em jogo."
+
+COMO OS DADOS FUNCIONAM (para você interpretar certo):
+- Cada "AVALIAÇÃO #" é UMA pessoa diferente que usou o totem. Nunca some as opiniões como se fossem da mesma pessoa.
+- Notas: RUIM (1), REGULAR (2), BOM (3), EXCELENTE (4). "NÃO UTILIZO" = a pessoa não usa aquela área (não conta como nota).
+- A meta da Everest é ser EXCELENTE. Portanto BOM não é vitória: é "aceitável, mas dá para melhorar".
+- Indicação de 0 a 10 = o quanto a pessoa recomendaria a academia.
+- Regra da casa: RUIM/REGULAR, indicação de 0 a 5 ou pergunta em branco = CRÍTICA. BOM/EXCELENTE e indicação de 6 a 10 = ELOGIO. A mesma pessoa pode elogiar uma coisa e criticar outra.
+- Vale o que a pessoa CLICOU, não o que ela escreveu. Um texto simpático numa nota RUIM continua sendo crítica.
+
+ESCREVA EXATAMENTE ESTE RELATÓRIO, NESTA ORDEM, COM ESTES TÍTULOS:
+
+1) RESUMO EM 5 LINHAS
+   Como a academia está indo, em português simples. Se estiver bem, diga que está bem.
+   Termine com a frase: "Se você só puder fazer uma coisa esta semana, faça: ____".
+
+2) OS NÚMEROS EXPLICADOS
+   Liste os principais números e, ao lado de cada um, uma frase explicando se é bom, ruim ou normal, e por quê.
+
+3) O QUE OS ALUNOS ESTÃO PEDINDO
+   Agrupe os assuntos que aparecem em mais de uma avaliação (ex.: espaço, equipamentos, limpeza, ar-condicionado).
+   Para cada assunto: quantas pessoas falaram, em que horários treinam, 2 ou 3 frases reais entre aspas, e o que isso significa na prática.
+   Ordene do assunto mais citado para o menos citado.
+
+4) EQUIPE — UM BLOCO PARA CADA PESSOA
+   Use os dados da seção EQUIPE. Para CADA funcionário avaliado, escreva:
+   • Nome e cargo
+   • Como está (nota em estrelas e quantas pessoas avaliaram)
+   • O QUE ELOGIAR NELE — frase pronta que o Wilson pode falar direto para a pessoa, citando o que os alunos disseram
+   • O QUE OBSERVAR — sinais de atenção, mesmo que pequenos
+   • O QUE PEDIR PARA MELHORAR — orientação prática e respeitosa, do jeito que um dono fala com o funcionário
+   Se alguém tiver poucas avaliações, diga que ainda são poucos dados para conclusão.
+   Se a nota geral de "Professores" nas avaliações estiver abaixo das outras, comente isso aqui e diga o que investigar com a equipe.
+
+5) PRÊMIOS
+   Use a seção PRÊMIOS. Diga se os prêmios estão ajudando a trazer avaliações, se a meta está adequada
+   (fácil demais, difícil demais), quantos já saíram, quantos ainda não foram retirados pelos ganhadores,
+   e sugira ajustes práticos (mudar a meta, trocar o prêmio, criar outro).
+   Se não houver prêmio ativo, sugira um que faça sentido para o perfil desses alunos.
+
+6) HORÁRIOS
+   Diga em quais horários as pessoas mais avaliam e em quais a experiência é pior.
+   Aponte se algum horário precisa de mais gente trabalhando ou mais atenção.
+
+7) PLANO DE AÇÃO
+   Três blocos, com no máximo 5 itens cada, sempre começando pelo que é barato e rápido:
+   • FAZER ESTA SEMANA (custo baixo, resolve incômodo)
+   • FAZER ESTE MÊS
+   • PLANEJAR COM CALMA (investimento maior)
+   Para cada item diga: o que fazer, por que (citando o dado que sustenta) e quem deve tocar.
+
+8) SINAIS DE ALERTA
+   Qualquer coisa que possa fazer aluno cancelar ou reclamar publicamente. Se não houver, escreva "Nada preocupante neste período".
+
+9) O QUE COMEMORAR COM A EQUIPE
+   Os pontos fortes reais, com frases dos alunos, para o Wilson usar na reunião e motivar o time.
+
+REGRAS FINAIS:
+- Não invente nada. Se um dado não existir no arquivo, escreva "não há dados suficientes sobre isso".
+- Use os textos reais dos alunos entre aspas — eles convencem mais que qualquer análise.
+- Nada de tabela complicada nem gráfico. Texto e listas simples.
+- Português do Brasil, tom direto e respeitoso.
+
+########## FIM DAS INSTRUÇÕES — OS DADOS COMEÇAM ABAIXO ##########
 
 ===== ESCOPO DESTA AUDITORIA =====
 Período escolhido pelo dono: ${pDe?pDe.split('-').reverse().join('/'):'início'} a ${pAte?pAte.split('-').reverse().join('/'):'hoje'}.
@@ -1857,18 +1914,64 @@ Não utilizam: ${[['arenakids','Arena Kids'],['quiosque','Quiosque'],['vestiario
     txt += `   Notas: ${CATS.map(([id,n])=>n+': '+(r[id]||'—')).join(' | ')}\n`;
     COMENTS.forEach(([id,n])=>{ if(r[id] && String(r[id]).trim()) txt += `   Comentário (${n}): "${String(r[id]).trim()}"\n`; });
   });
-  // professores (se houver)
+  // ===== EQUIPE: um bloco por pessoa, com tudo que os alunos disseram =====
   const listaProfs = profs();
+  const noPeriodo = a => {
+    if(!a.ts) return false;
+    const dia = a.ts.slice(0,10);
+    return (!pDe || dia>=pDe) && (!pAte || dia<=pAte);
+  };
   if(listaProfs.length){
-    txt += `\n===== PROFESSORES (estrelas de 1 a 5) =====\n`;
+    txt += `\n===== EQUIPE (cada aluno dá de 1 a 5 estrelas) =====\n`;
+    txt += `Como ler: 5 e 4 estrelas = elogio · 3 ou menos = ponto de atenção.\n\n`;
     listaProfs.forEach(p=>{
-      const av = avalProfs().filter(a=>String(a.prof)===String(p.id) && dentroPeriodo(a));
-      const m = av.length ? (av.reduce((x,a)=>x+a.estrelas,0)/av.length).toFixed(2) : 'sem avaliações';
-      txt += `${p.nome}: média ${m} (${av.length} avaliações)\n`;
-      av.filter(a=>a.comentario).slice(-5).forEach(a=>{ txt += `   "${a.comentario}" (${a.estrelas} estrelas)\n`; });
+      const av = avalProfs().filter(a=>String(a.prof)===String(p.id) && noPeriodo(a));
+      const [nome, cargo] = [nomeCargo(p.nome).n, nomeCargo(p.nome).c];
+      if(!av.length){ txt += `${nome}${cargo?' ('+cargo+')':''}: nenhuma avaliação neste período.\n\n`; return; }
+      const m = (av.reduce((x,a)=>x+a.estrelas,0)/av.length).toFixed(2);
+      const bons = av.filter(a=>a.estrelas>=4).length, ruins = av.filter(a=>a.estrelas<=3).length;
+      txt += `${nome}${cargo?' ('+cargo+')':''}\n`;
+      txt += `   Média: ${m} de 5 estrelas · ${av.length} avaliação(ões) · ${bons} elogio(s) · ${ruins} ponto(s) de atenção\n`;
+      const elogios = av.filter(a=>a.estrelas>=4 && a.comentario);
+      const criticas = av.filter(a=>a.estrelas<=3 && a.comentario);
+      if(elogios.length){
+        txt += `   O que os alunos elogiaram:\n`;
+        elogios.slice(-6).forEach(a=>{ txt += `      "${a.comentario}" (${a.estrelas} estrelas)\n`; });
+      }
+      if(criticas.length){
+        txt += `   O que os alunos reclamaram:\n`;
+        criticas.slice(-6).forEach(a=>{ txt += `      "${a.comentario}" (${a.estrelas} estrelas)\n`; });
+      }
+      if(!elogios.length && !criticas.length) txt += `   (avaliaram só com estrelas, sem escrever nada)\n`;
+      txt += `\n`;
     });
+    txt += `Nota geral de "Professores" nas avaliações da academia: ${media('professores')} de 4.\n`;
+  } else {
+    txt += `\n===== EQUIPE =====\nNenhum funcionário cadastrado para avaliação individual neste período.\n`;
   }
-  txt += `\n===== FIM DOS DADOS =====`;
+
+  // ===== PRÊMIOS =====
+  const listaPremios = premiosLista();
+  const codigos = premios().filter(noPeriodo);
+  txt += `\n===== PRÊMIOS =====\n`;
+  txt += `Como funciona: o dono cadastra prêmios com uma meta (ex.: "a cada 200 avaliações").\nQuando a meta bate, quem acabou de avaliar ganha um código para retirar na recepção.\n\n`;
+  txt += `Sorteio de prêmios está ${roleta().ativa ? 'LIGADO' : 'DESLIGADO'} no totem.\n`;
+  if(listaPremios.length){
+    listaPremios.forEach(p=>{
+      const prog = p.cicloInicio ? dados().filter(x=>x.ts && x.ts > p.cicloInicio).length : 0;
+      txt += `• ${p.nome||'sem nome'} — meta: a cada ${p.alvo||'?'} avaliações · ${p.repete?'contínuo (recomeça sozinho)':'uma vez só'} · ${p.ativo?'ativo':'pausado'}${p.ganhou?' · JÁ ENCERRADO (teve ganhador)':''}\n`;
+      txt += `   Já saiu ${p.vezes||0} vez(es). Progresso do ciclo atual: ${prog} de ${p.alvo||'?'} avaliações.\n`;
+      if(p.desc) txt += `   Descrição: ${p.desc}\n`;
+    });
+  } else txt += `Nenhum prêmio cadastrado.\n`;
+  txt += `\nCódigos gerados no período: ${codigos.length}\n`;
+  const naoEntregues = codigos.filter(c=>!c.entregue).length;
+  txt += `Ainda NÃO retirados pelos ganhadores: ${naoEntregues}\n`;
+  codigos.slice(-10).forEach(c=>{
+    txt += `   ${c.codigo} · ${c.premio} · ${new Date(c.ts).toLocaleString('pt-BR')} · ${c.entregue?'entregue':'aguardando retirada'}\n`;
+  });
+
+  txt += `\n===== FIM DOS DADOS =====\n\nAGORA ESCREVA O RELATÓRIO COMPLETO CONFORME AS INSTRUÇÕES DO TOPO. NÃO PERGUNTE NADA ANTES.`;
 
   // baixa o arquivo e copia
   const blob = new Blob(['﻿'+txt],{type:'text/plain;charset=utf-8'});
@@ -2559,7 +2662,7 @@ function pushRoleta(){ if(db) db.collection('config').doc('geral').set({roleta: 
     const r = roleta();
     if((r.nome || r.foto || r.alvo) && premiosLista().length===0){
       salvarListaLocal([{ uid:novoUid(), nome:r.nome||'Prêmio', desc:r.desc||'', foto:r.foto||'',
-        alvo:r.alvo||0, regras:r.regras||'', local:r.local||'academia', repete:true, vezes:0,
+        alvo:r.alvo||0, regras:r.regras||'', repete:true, vezes:0,
         ativo:true, ordem:1, cicloInicio:r.cicloInicio||new Date().toISOString(), ganhou:false, sync:false }]);
     }
     localStorage.setItem(KMIGROU, '1');
@@ -2801,7 +2904,7 @@ function verificarPremio(){
   const codigo = 'EVR-' + Math.random().toString(36).slice(2,8).toUpperCase();
   // guarda uma cópia do prêmio no código gerado (histórico fiel, mesmo se editarem depois)
   const reg = { uid: novoUid(), codigo, ts: agora, premio: escolhido.nome||'Prêmio', desc: escolhido.desc||'',
-    foto: escolhido.foto||'', regras: escolhido.regras||'', local: escolhido.local||'academia',
+    foto: escolhido.foto||'', regras: escolhido.regras||'',
     premioUid: escolhido.uid, entregue:false, sync:false };
   const lg = premios(); lg.push(reg);
   localStorage.setItem(KPREMIOS, JSON.stringify(lg));
@@ -2835,7 +2938,7 @@ function testarPremio(uid){
   premioDemo = true;
   document.getElementById('painel').classList.remove('on');
   mostrarPremio({ codigo:'EVR-TESTE', ts:new Date().toISOString(), premio:p.nome, desc:p.desc,
-    foto:p.foto, regras:p.regras, local:p.local });
+    foto:p.foto, regras:p.regras });
 }
 function editarPremioItem(uid){
   const p = premiosLista().find(x=>String(x.uid)===String(uid));
@@ -2866,7 +2969,6 @@ function salvarEdicaoPremio(){
 }
 function mostrarPremio(reg){
   emPremio = true;
-  const local = reg.local || 'academia';
   telaProf(`<div class="cartao" style="overflow:visible">
     ${premioDemo?`<p class="sub" style="color:var(--ruim);font-weight:900;letter-spacing:2px;margin-bottom:10px">MODO TESTE — SÓ VOCÊ ESTÁ VENDO · NENHUM PRÊMIO FOI GERADO</p>`:''}
     <span class="rotulo"><b>PRÊMIO EVEREST</b></span>

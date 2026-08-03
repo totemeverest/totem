@@ -2146,9 +2146,13 @@ ESCREVA EXATAMENTE ESTE RELATÓRIO, NESTA ORDEM, COM ESTES TÍTULOS:
 2) OS NÚMEROS EXPLICADOS
    Máximo 8 linhas, formato "Número — o que significa — é bom, normal ou ruim".
    Compare cada nota com a meta EXCELENTE (4). Marque com ⚠ tudo que estiver abaixo de 3,0.
+   Cite também a porcentagem de gente insatisfeita das áreas piores (seção "QUANTAS PESSOAS RECLAMARAM").
+   Percentual convence mais que média: "1 em cada 3 pessoas reclamou da limpeza" é mais forte que "nota 2,8".
 
 3) O QUE OS ALUNOS ESTÃO PEDINDO
-   Agrupe por assunto (espaço, equipamentos, limpeza, ar-condicionado, banheiro...).
+   Use as seções "TUDO QUE OS ALUNOS ESCREVERAM, JÁ SEPARADO POR ASSUNTO" e
+   "QUANTAS PESSOAS RECLAMARAM DE CADA ÁREA" — os dados já vêm agrupados, não precisa recontar.
+   Junte assuntos parecidos que aparecem em campos diferentes (ex.: banheiro citado em Limpeza e em Vestiários).
    Ordene do mais citado para o menos citado. Para cada assunto:
    • quantas pessoas falaram e em que horários elas treinam
    • 2 ou 3 frases reais entre aspas
@@ -2173,8 +2177,10 @@ ESCREVA EXATAMENTE ESTE RELATÓRIO, NESTA ORDEM, COM ESTES TÍTULOS:
    nas avaliações da academia está acima ou abaixo das outras áreas.
 
 5) HORÁRIOS DA ACADEMIA
-   Em que horários as pessoas mais avaliam e em quais a experiência piora.
-   Diga claramente se algum horário precisa de mais gente trabalhando, e qual.
+   Use a seção "NOTA DE CADA ÁREA POR TURNO". Máximo 5 linhas.
+   Diga qual turno tem a pior experiência e QUAL área puxa a nota dele para baixo.
+   Se uma área vai mal só em um turno, isso é problema de escala ou de rotina daquele horário — aponte.
+   Termine dizendo se algum horário precisa de mais gente trabalhando, e qual.
 
 6) PRÊMIOS
    Máximo 6 linhas. Se a meta está fácil ou difícil demais, quantos códigos ainda não foram retirados,
@@ -2237,12 +2243,84 @@ Não utilizam: ${[['arenakids','Arena Kids'],['quiosque','Quiosque'],['vestiario
         : `\nNenhuma área piorou de forma relevante em relação ao mês passado.\n`;
     }
     const semC = mud.itens.filter(x=>!x.valido).map(x=>x.nome);
-    if(semC.length) txt += `Sem comparação possível (poucas respostas): ${semC.join(' · ')}\n`;
+    if(semC.length) txt += `Estes itens ainda não dá para comparar entre as duas janelas, por falta de respostas em uma delas: ${semC.join(' · ')}.\nIsso NÃO quer dizer que não existem dados sobre eles — só que a comparação de 30 dias ainda não é confiável.\n`;
   }
+
+  /* ===== CONSOLIDADOS =====
+     Vêm ANTES dos registros brutos de propósito: se a IA tiver limite de
+     leitura, ela lê o que já está mastigado e o relatório sai bom do mesmo
+     jeito. Os registros completos ficam abaixo, para quem quiser conferir. */
+
+  txt += `\n===== QUANTAS PESSOAS RECLAMARAM DE CADA ÁREA =====\n`;
+  txt += `Conta quem CLICOU em RUIM ou REGULAR. É o tamanho real do problema.\n`;
+  const ranking = CATS.map(([id,nome])=>{
+    const usaram = d.filter(r=>r[id] && r[id]!=='NÃO UTILIZO').length;
+    const ruins  = d.filter(r=>r[id]==='RUIM').length;
+    const regs   = d.filter(r=>r[id]==='REGULAR').length;
+    const branco = d.filter(r=>!r[id]).length;
+    return {nome, usaram, ruins, regs, branco, mal: ruins+regs,
+            pct: usaram ? Math.round((ruins+regs)/usaram*100) : 0};
+  }).sort((a,b)=>b.pct-a.pct || b.mal-a.mal);
+  const comProblema = ranking.filter(x=>x.mal || x.branco);
+  const semProblema = ranking.filter(x=>!x.mal && !x.branco);
+  comProblema.forEach(x=>{
+    txt += `• ${x.nome}: ${x.mal} de ${x.usaram} pessoas (${x.pct}%) — ${x.ruins} RUIM, ${x.regs} REGULAR${x.branco?`, ${x.branco} deixaram em branco`:''}\n`;
+  });
+  if(semProblema.length) txt += `Ninguém reclamou de: ${semProblema.map(x=>x.nome).join(' · ')}.\n`;
+  const pior = comProblema[0];
+  if(pior && pior.mal) txt += `Área com mais gente insatisfeita: ${pior.nome} — ${pior.pct}% de quem usa, ou seja, cerca de 1 em cada ${Math.max(2,Math.round(100/pior.pct))} pessoas.\n`;
+  if(!comProblema.length) txt += `Nenhuma área recebeu RUIM ou REGULAR neste período.\n`;
+
+  txt += `\n===== NOTA DE CADA ÁREA POR TURNO =====\n`;
+  txt += `Serve para descobrir se o problema é da academia inteira ou só de um horário.\nEscala de 1 (RUIM) a 4 (EXCELENTE). "—" = ninguém respondeu.\n`;
+  const TURNOS = ['Manhã','Tarde','Noite'];
+  const mediaTurno = (id,t)=>{
+    const v = d.filter(r=>r.turno===t).map(r=>VAL[r[id]]).filter(Boolean);
+    return v.length ? (v.reduce((a,b)=>a+b,0)/v.length) : null;
+  };
+  TURNOS.forEach(t=>{
+    const qtd = d.filter(r=>r.turno===t).length;
+    if(!qtd){ txt += `${t}: nenhuma avaliação.\n`; return; }
+    txt += `${t} (${qtd} ${qtd===1?'pessoa':'pessoas'}): ` +
+      CATS.map(([id,nome])=>{ const m=mediaTurno(id,t); return nome+' '+(m===null?'—':m.toFixed(2)); }).join(' · ') + `\n`;
+  });
+  const mediaGeralTurno = t => {
+    const v = d.filter(r=>r.turno===t).map(r=>VAL[r.geral]).filter(Boolean);
+    return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null;
+  };
+  const comNota = TURNOS.map(t=>({t, m:mediaGeralTurno(t)})).filter(x=>x.m!==null).sort((a,b)=>a.m-b.m);
+  if(comNota.length>1)
+    txt += `Turno com a PIOR experiência geral: ${comNota[0].t} (${comNota[0].m.toFixed(2)}) · melhor: ${comNota[comNota.length-1].t} (${comNota[comNota.length-1].m.toFixed(2)}).\n`;
+
+  txt += `\n===== TUDO QUE OS ALUNOS ESCREVERAM, JÁ SEPARADO POR ASSUNTO =====\n`;
+  txt += `Use esta seção para o item 3 do relatório. Cada linha traz o horário em que\naquela pessoa treina e se aquele ponto foi elogio ou reclamação.\n`;
+  let totalEscritos = 0;
+  COMENTS.forEach(([id,nome])=>{
+    const falas = d.filter(r=>r[id] && String(r[id]).trim());
+    if(!falas.length) return;
+    totalEscritos += falas.length;
+    const rec = falas.filter(r=>ladoComentario(r,id)==='critica');
+    const elo = falas.filter(r=>ladoComentario(r,id)!=='critica');
+    txt += `\n--- ${nome.toUpperCase()} · ${falas.length} ${falas.length===1?'pessoa escreveu':'pessoas escreveram'} (${rec.length} ${rec.length===1?'reclamação':'reclamações'}, ${elo.length} ${elo.length===1?'elogio':'elogios'}) ---\n`;
+    const linha = (r,marca)=>`[${r.horario||'horário não informado'} · ${r.turno||'—'} · ${marca}] "${String(r[id]).trim()}"\n`;
+    rec.forEach(r=>{ txt += linha(r,'RECLAMAÇÃO'); });   // reclamação primeiro: é o que exige ação
+    elo.forEach(r=>{ txt += linha(r,'ELOGIO'); });
+  });
+  if(!totalEscritos) txt += `Ninguém escreveu nada neste período.\n`;
 
   txt += `\n===== REGISTROS COMPLETOS =====\n`;
 
-  d.forEach((r,i)=>{
+  /* Um arquivo gigante faz a IA ler pela metade e o relatório sai raso.
+     Acima disso, mandamos as mais recentes — os números e os comentários
+     das seções anteriores continuam considerando TODAS. */
+  const TETO_REGISTROS = 200;
+  const detalhados = d.length > TETO_REGISTROS ? d.slice(-TETO_REGISTROS) : d;
+  if(d.length > TETO_REGISTROS){
+    txt += `ATENÇÃO: são ${d.length} avaliações no período. Abaixo estão as ${TETO_REGISTROS} mais recentes, uma a uma.\n`;
+    txt += `As ${d.length - TETO_REGISTROS} anteriores JÁ ESTÃO contadas em tudo que veio acima (números, áreas, turnos e comentários).\n`;
+    txt += `Portanto use as seções de cima para as conclusões e esta aqui só para citar casos.\n\n`;
+  }
+  detalhados.forEach((r,i)=>{
     const dt = dataOk(r.ts) ? dataOk(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
     txt += `AVALIAÇÃO #${r.num??i+1} (pessoa/sessão única) | ${dt} | ${r.horario||'—'} (${r.turno||'—'}) | Área: ${r.area||'—'} | Indicação: ${r.nps??'—'}/10\n`;
     txt += `   Notas: ${CATS.map(([id,n])=>n+': '+(r[id]||'—')).join(' | ')}\n`;

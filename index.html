@@ -376,6 +376,26 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 .estrela-row .st{color:var(--dourado);letter-spacing:2px;font-size:16px}
 .vazio{color:var(--muted);font-size:15px;padding:10px 0;font-weight:600}
 
+/* IMPRESSÃO — o Panorama vira um relatório de papel legível.
+   Fundo branco, texto preto, sem botões e sem quebrar cartão no meio da folha. */
+@media print{
+  @page{ margin:12mm }
+  html,body{ background:#fff !important; color:#111 !important }
+  body *{ visibility:hidden }
+  #panoramaEquipe, #panoramaEquipe *{ visibility:visible }
+  #panoramaEquipe{ position:absolute !important; inset:0 !important; display:block !important;
+    background:#fff !important; height:auto !important; overflow:visible !important }
+  #panoramaEquipe header{ border:none !important; background:none !important; padding:0 0 6px !important }
+  #panoramaEquipe .ptit b{ color:#111 !important }
+  #panoramaEquipe .pcorpo{ overflow:visible !important; height:auto !important; padding:0 !important }
+  #panoramaEquipe button{ display:none !important }
+  #panoramaEquipe .bloco{ background:#fff !important; border:1px solid #bbb !important;
+    box-shadow:none !important; page-break-inside:avoid; break-inside:avoid; margin-bottom:10px !important }
+  #panoramaEquipe h3{ color:#111 !important }
+  #panoramaEquipe .vazio, #panoramaEquipe span, #panoramaEquipe div, #panoramaEquipe b, #panoramaEquipe small{ color:#222 !important }
+  #panoramaEquipe img{ filter:grayscale(.15) }
+}
+
 /* LOGIN */
 .pin{position:fixed;inset:0;z-index:70;background:rgba(10,8,22,.92);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center}
 .pin.on{display:flex}
@@ -1948,6 +1968,10 @@ ESCREVA EXATAMENTE ESTE RELATÓRIO, NESTA ORDEM, COM ESTES TÍTULOS:
      Se as avaliações dela aparecerem em horário que não bate com a escala dela, escreva
      "vale conferir a escala desse dia" — sem acusar ninguém, pode ser troca de turno ou aluno que confundiu a pessoa.
    Com menos de 3 avaliações, escreva "poucos dados — ainda não dá para concluir" e passe para a próxima.
+   Se a lista "SINAIS FORA DO COMUM" citar essa pessoa, acrescente uma linha "CONFERIR:" explicando o caso
+   em português simples e o que o Wilson deve checar (escala do dia, câmera, quem estava no balcão).
+   Trate isso com cuidado: pode ser alguém clicando várias vezes de propósito, mas também pode ser
+   movimento normal. NUNCA afirme que houve fraude — diga o que checar.
    No fim do item 4, uma linha: quem está no topo, quem precisa de conversa, e se a nota de "Professores"
    nas avaliações da academia está acima ou abaixo das outras áreas.
 
@@ -2047,6 +2071,23 @@ Não utilizam: ${[['arenakids','Arena Kids'],['quiosque','Quiosque'],['vestiario
       txt += `\n`;
     });
     txt += `Nota geral de "Professores" nas avaliações da academia: ${media('professores')} de 4.\n`;
+
+    // sinais de algo fora do comum (mesma lógica do Panorama, para a IA comentar)
+    const nomeDe = id => { const q = listaProfs.find(x=>String(x.id)===String(id)); return q ? nomeCargo(q.nome).n : 'pessoa já excluída'; };
+    const sinais = panSuspeitas(avalProfs().filter(noPeriodo), nomeDe);
+    txt += `\n--- SINAIS FORA DO COMUM (não são acusação, são pontos para o dono conferir) ---\n`;
+    if(!sinais.length){
+      txt += `Nada fora do comum neste período.\n`;
+    } else {
+      sinais.slice(0,12).forEach(s=>{
+        const q = dataOk(s.ts) ? dataOk(s.ts).toLocaleString('pt-BR') : 'sem data';
+        if(s.tipo==='rajada')
+          txt += `• ${s.nome}: ${s.qtd} avaliações em menos de 5 minutos, em ${q} (média ${s.media} de 5, ${s.ruins} ruins). Pode ser a MESMA pessoa clicando várias vezes.\n`;
+        else
+          txt += `• ${s.nome}: crítica de ${s.estrelas} estrelas à ${s.turno.toLowerCase()} (${s.faixa}) em ${q}, mas só ${s.qtd} das ${s.total} avaliações dessa pessoa vêm desse turno.${s.comentario?` Escreveram: "${s.comentario}".`:''}\n`;
+      });
+      txt += `Como usar: confira a escala do dia. Se a pessoa não estava trabalhando naquele horário, essa avaliação NÃO fala dela — pode ser confusão do aluno ou alguém querendo prejudicar.\n`;
+    }
   } else {
     txt += `\n===== EQUIPE =====\nNenhum funcionário cadastrado para avaliação individual neste período.\n`;
   }
@@ -2797,12 +2838,27 @@ function salvarEdicaoProf(id){
 function fecharPerfilProf(){ document.getElementById('perfilProf').classList.remove('on'); desenharProfsAdmin(); }
 
 /* ===================== PANORAMA DA EQUIPE =====================
-   Uma tela só com TUDO de TODO MUNDO: nota, horários e cada
-   comentário que os alunos escreveram, separado por pessoa. */
-let panPeriodo = 'mes';   // 'mes' | 'tri' | 'tudo'
-function abrirPanorama(){ desenharPanorama(); document.getElementById('panoramaEquipe').classList.add('on'); }
+   Uma tela só com TUDO de TODO MUNDO: nota, horários e cada comentário
+   que os alunos escreveram, separado por pessoa.
+   Pensado para o dono: poucos botões, tudo mastigado, sem rolagem infinita. */
+let panPeriodo = 'mes';     // 'mes' | 'tri' | 'tudo'
+let panTurno   = 'TODOS';   // 'TODOS' | 'Manhã' | 'Tarde' | 'Noite'
+let panSoNovas = false;     // mostra só o que chegou depois da última visita
+let panPag     = 1;
+const PAN_POR_PAG = 5;      // pessoas por página — evita rolagem sem fim
+const KV_PAN = 'everest_visto_panorama';
+
+function abrirPanorama(){ panPag = 1; desenharPanorama(); document.getElementById('panoramaEquipe').classList.add('on'); }
 function fecharPanorama(){ document.getElementById('panoramaEquipe').classList.remove('on'); desenharProfsAdmin(); }
-function panMudarPeriodo(p){ panPeriodo = p; desenharPanorama(); }
+function panMudarPeriodo(p){ panPeriodo = p; panPag = 1; desenharPanorama(); }
+function panMudarTurno(t){ panTurno = t; panPag = 1; desenharPanorama(); }
+function panSetPag(n){ panPag = n; desenharPanorama(); }
+function panToggleNovas(){ panSoNovas = !panSoNovas; panPag = 1; desenharPanorama(); }
+function panVisto(){ try{ return localStorage.getItem(KV_PAN) || ''; }catch(e){ return ''; } }
+function panMarcarVisto(){
+  try{ localStorage.setItem(KV_PAN, new Date().toISOString()); }catch(e){}
+  panSoNovas = false; panPag = 1; desenharPanorama(); desenharBadges();
+}
 
 function panFiltro(){
   if(panPeriodo === 'tudo') return { ok: ()=>true, rotulo: 'Desde o início' };
@@ -2816,24 +2872,101 @@ function panFiltro(){
   return { ok: a => a.ts && a.ts >= corte, rotulo: 'Últimos 3 meses' };
 }
 
+/* ---- SINAIS DE ALGO ESTRANHO ----
+   Não acusa ninguém. Só levanta a mão para o dono conferir:
+   1) várias avaliações da MESMA pessoa em poucos minutos (alguém clicando repetido)
+   2) crítica num turno em que essa pessoa quase nunca é avaliada
+      (o próprio histórico define o horário dela — não precisa cadastrar escala) */
+function panSuspeitas(todas, nomeDe){
+  const achados = [];
+  const porProf = {};
+  todas.forEach(a=>{ (porProf[a.prof] = porProf[a.prof] || []).push(a); });
+
+  Object.keys(porProf).forEach(id=>{
+    const arr = porProf[id].slice().sort((x,y)=>String(x.ts).localeCompare(String(y.ts)));
+
+    // 1) rajada: 3 ou mais em 5 minutos
+    let i = 0;
+    while(i < arr.length){
+      let j = i;
+      while(j+1 < arr.length && (new Date(arr[j+1].ts) - new Date(arr[i].ts)) <= 5*60000) j++;
+      const qtd = j - i + 1;
+      if(qtd >= 3){
+        const notas = arr.slice(i, j+1).map(a=>a.estrelas);
+        achados.push({ tipo:'rajada', prof:id, nome:nomeDe(id), qtd, ts:arr[i].ts,
+          media:(notas.reduce((x,y)=>x+y,0)/notas.length).toFixed(1),
+          ruins: notas.filter(n=>n<=3).length });
+        i = j + 1;
+      } else i++;
+    }
+
+    // 2) crítica em turno fora do padrão (só com histórico suficiente)
+    if(arr.length >= 8){
+      const cT = {}; arr.forEach(a=>{ const t = turnoDe(a); cT[t] = (cT[t]||0)+1; });
+      arr.filter(a=>a.estrelas<=3).forEach(a=>{
+        const t = turnoDe(a);
+        if((cT[t]/arr.length) <= 0.12){
+          achados.push({ tipo:'fora', prof:id, nome:nomeDe(id), ts:a.ts, turno:t, faixa:faixaDe(a),
+            qtd:cT[t], total:arr.length, estrelas:a.estrelas, comentario:a.comentario||'' });
+        }
+      });
+    }
+  });
+  return achados.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
+}
+
 function desenharPanorama(){
   const lista = profs();
   const f = panFiltro();
-  const todas = avalProfs().filter(f.ok);
   const alvo = document.getElementById('panCorpo');
+  const visto = panVisto();
+  const ehNova = a => !!visto && String(a.ts) > visto;
 
-  const btnP = (id, txt) => `<button onclick="panMudarPeriodo('${id}')" style="
-    padding:11px 20px;border-radius:12px;cursor:pointer;font-weight:900;font-size:13px;letter-spacing:1px;
-    border:1px solid ${panPeriodo===id?'var(--dourado)':'var(--linha)'};
-    background:${panPeriodo===id?'rgba(255,201,60,.16)':'rgba(255,255,255,.04)'};
-    color:${panPeriodo===id?'var(--dourado)':'var(--muted)'}">${txt}</button>`;
-  const barraPeriodo = `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
-    ${btnP('mes','ESTE MÊS')}${btnP('tri','ÚLTIMOS 3 MESES')}${btnP('tudo','DESDE O INÍCIO')}
-    <button onclick="window.print()" style="padding:11px 20px;border-radius:12px;cursor:pointer;font-weight:900;font-size:13px;letter-spacing:1px;border:1px solid var(--linha);background:rgba(255,255,255,.04);color:var(--muted);margin-left:auto">🖨 IMPRIMIR</button>
+  /* período → turno → só as novas (nessa ordem) */
+  const doPeriodo = avalProfs().filter(f.ok);
+  const novasNoPeriodo = visto ? doPeriodo.filter(ehNova).length : 0;
+  let todas = panTurno==='TODOS' ? doPeriodo : doPeriodo.filter(a=>turnoDe(a)===panTurno);
+  if(panSoNovas) todas = todas.filter(ehNova);
+
+  const btn = (onclick, ativo, txt, cor) => `<button onclick="${onclick}" style="
+    padding:11px 18px;border-radius:12px;cursor:pointer;font-weight:900;font-size:13px;letter-spacing:1px;
+    border:1px solid ${ativo?(cor||'var(--dourado)'):'var(--linha)'};
+    background:${ativo?'rgba(255,201,60,.16)':'rgba(255,255,255,.04)'};
+    color:${ativo?(cor||'var(--dourado)'):'var(--muted)'}">${txt}</button>`;
+
+  const barras = `
+  <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+    ${btn("panMudarPeriodo('mes')",  panPeriodo==='mes',  'ESTE MÊS')}
+    ${btn("panMudarPeriodo('tri')",  panPeriodo==='tri',  'ÚLTIMOS 3 MESES')}
+    ${btn("panMudarPeriodo('tudo')", panPeriodo==='tudo', 'DESDE O INÍCIO')}
+    <button onclick="window.print()" style="padding:11px 18px;border-radius:12px;cursor:pointer;font-weight:900;font-size:13px;letter-spacing:1px;border:1px solid var(--linha);background:rgba(255,255,255,.04);color:var(--muted);margin-left:auto">🖨 IMPRIMIR</button>
+  </div>
+  <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+    <span style="font-size:11px;font-weight:900;letter-spacing:2px;color:var(--muted);margin-right:2px">HORÁRIO:</span>
+    ${['TODOS','Manhã','Tarde','Noite'].map(t=>
+      btn(`panMudarTurno('${t}')`, panTurno===t, t==='TODOS'?'TODOS':t.toUpperCase(), t==='TODOS'?null:(CORTURNO[t]||null))).join('')}
+  </div>`;
+
+  /* faixa de novidades — só aparece quando faz sentido */
+  const faixaNovas = visto ? (novasNoPeriodo ? `
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:rgba(76,217,123,.10);border:1px solid rgba(76,217,123,.35);border-radius:14px;padding:12px 16px;margin-bottom:16px">
+    <b style="color:var(--bom);font-size:14px">✨ ${novasNoPeriodo} ${novasNoPeriodo===1?'avaliação nova':'avaliações novas'} desde a sua última olhada
+      <span style="color:var(--muted);font-weight:700">(${dataOk(visto)?dataOk(visto).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'})</span></b>
+    <div style="display:flex;gap:8px;margin-left:auto;flex-wrap:wrap">
+      ${btn('panToggleNovas()', panSoNovas, panSoNovas?'MOSTRAR TUDO':'VER SÓ AS NOVAS', 'var(--bom)')}
+      ${btn('panMarcarVisto()', false, 'JÁ VI TUDO')}
+    </div>
+  </div>` : `
+  <div style="background:rgba(255,255,255,.04);border:1px solid var(--linha);border-radius:14px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--muted);font-weight:700">
+    Nada novo desde ${dataOk(visto)?dataOk(visto).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'} — você já viu tudo deste período.
+  </div>`) : `
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.04);border:1px solid var(--linha);border-radius:14px;padding:12px 16px;margin-bottom:16px">
+    <b style="font-size:13px;color:var(--muted)">Quer parar de reler o que já viu? Toque em "já vi tudo" e da próxima vez só o que for novo aparece marcado.</b>
+    <div style="margin-left:auto">${btn('panMarcarVisto()', false, 'JÁ VI TUDO')}</div>
   </div>`;
 
   if(!lista.length){
-    alvo.innerHTML = barraPeriodo + `<div class="bloco"><div class="vazio">Nenhuma pessoa cadastrada na equipe ainda.</div></div>`;
+    alvo.innerHTML = barras + `<div class="bloco"><div class="vazio">Nenhuma pessoa cadastrada na equipe ainda.</div></div>`;
     return;
   }
 
@@ -2843,10 +2976,10 @@ function desenharPanorama(){
     const media = av.length ? av.reduce((x,a)=>x+a.estrelas,0)/av.length : 0;
     const el = av.filter(a=>a.estrelas>=4), cr = av.filter(a=>a.estrelas<=3);
     const cT = {}; av.forEach(a=>{ const t=turnoDe(a); cT[t]=(cT[t]||0)+1; });
-    const picoT = Object.keys(cT).sort((x,y)=>cT[y]-cT[x])[0] || null;
     const cF = {}; av.forEach(a=>{ const x=faixaDe(a); cF[x]=(cF[x]||0)+1; });
     const picoF = Object.keys(cF).sort((x,y)=>cF[y]-cF[x])[0] || null;
-    return { p, av, media, el, cr, cT, picoT, cF, picoF };
+    const novas = av.filter(ehNova).length;
+    return { p, av, media, el, cr, cT, cF, picoF, novas };
   }).sort((a,b)=> b.media-a.media || b.av.length-a.av.length);
 
   const comAv = linhas.filter(x=>x.av.length);
@@ -2857,6 +2990,7 @@ function desenharPanorama(){
   const totCr = todas.filter(a=>a.estrelas<=3).length;
   const cTg = {}; todas.forEach(a=>{ const t=turnoDe(a); cTg[t]=(cTg[t]||0)+1; });
   const picoGeral = Object.keys(cTg).sort((x,y)=>cTg[y]-cTg[x])[0];
+  const rotuloFiltro = f.rotulo + (panTurno==='TODOS' ? '' : ' · só '+panTurno.toLowerCase()) + (panSoNovas ? ' · só as novas' : '');
 
   /* ------- topo: os números que o dono olha primeiro ------- */
   const kpi = (rot, val, sub, cor) => `<div style="flex:1 1 150px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px 18px">
@@ -2867,8 +3001,8 @@ function desenharPanorama(){
 
   const topo = `
   <div class="bloco" style="background:linear-gradient(135deg,rgba(107,74,255,.14),rgba(255,201,60,.08));border-color:rgba(255,201,60,.28)">
-    <h3 style="margin-bottom:6px">Resumo · ${f.rotulo}</h3>
-    <p class="vazio" style="padding:0 0 16px">${totalAv ? `${totalAv} ${totalAv===1?'aluno avaliou':'alunos avaliaram'} a equipe neste período.` : 'Nenhuma avaliação da equipe neste período.'}</p>
+    <h3 style="margin-bottom:6px">Resumo · ${rotuloFiltro}</h3>
+    <p class="vazio" style="padding:0 0 16px">${totalAv ? `${totalAv} ${totalAv===1?'aluno avaliou':'alunos avaliaram'} a equipe.` : 'Nenhuma avaliação da equipe com esses filtros.'}</p>
     <div style="display:flex;gap:12px;flex-wrap:wrap">
       ${kpi('MÉDIA DA EQUIPE', totalAv? mediaEquipe.toFixed(2) : '—', totalAv? 'de 5 estrelas' : 'sem dados', totalAv? (mediaEquipe>=4?'var(--bom)':mediaEquipe>=3?'var(--dourado)':'var(--ruim)') : 'var(--muted)')}
       ${kpi('ELOGIOS', totEl, '4 e 5 estrelas', 'var(--bom)')}
@@ -2877,6 +3011,28 @@ function desenharPanorama(){
       ${kpi('PESSOAS', lista.length, `${comAv.length} com avaliação`, '#fff')}
     </div>
   </div>`;
+
+  /* ------- sinais de algo estranho ------- */
+  const nomeDe = id => { const p = lista.find(x=>String(x.id)===String(id)); return p ? nomeCargo(p.nome).n : 'Alguém já excluído'; };
+  const susp = panSuspeitas(doPeriodo, nomeDe).slice(0,6);
+  const blocoSusp = susp.length ? `
+  <div class="bloco" style="border-color:rgba(255,162,62,.45);background:rgba(255,162,62,.06)">
+    <h3 style="color:var(--regular)">Vale conferir</h3>
+    <p class="vazio" style="padding:0 0 12px">Não quer dizer que teve má-fé. São só coisas fora do comum que valem uma olhada sua.</p>
+    ${susp.map(s=>{
+      const q = dataOk(s.ts);
+      const quando = q ? q.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+      if(s.tipo==='rajada') return `<div style="border-left:3px solid var(--regular);padding:9px 14px;margin-bottom:9px;background:rgba(255,255,255,.03);border-radius:0 10px 10px 0">
+        <b style="font-size:14px">${escHtml(s.nome)}: ${s.qtd} avaliações em menos de 5 minutos</b>
+        <div style="font-size:12.5px;color:var(--muted);font-weight:700;margin-top:2px">${quando} · média ${s.media} de 5${s.ruins?` · ${s.ruins} ${s.ruins===1?'delas ruim':'delas ruins'}`:''} — pode ser a mesma pessoa clicando várias vezes.</div>
+      </div>`;
+      return `<div style="border-left:3px solid var(--regular);padding:9px 14px;margin-bottom:9px;background:rgba(255,255,255,.03);border-radius:0 10px 10px 0">
+        <b style="font-size:14px">${escHtml(s.nome)}: crítica de ${s.estrelas}★ à ${s.turno.toLowerCase()}, horário em que quase nunca é avaliado(a)</b>
+        <div style="font-size:12.5px;color:var(--muted);font-weight:700;margin-top:2px">${quando} (${s.faixa}) · só ${s.qtd} das ${s.total} avaliações dessa pessoa vieram desse turno.${s.comentario?` Escreveram: “${escHtml(s.comentario)}”`:''}</div>
+      </div>`;
+    }).join('')}
+    <p class="vazio" style="padding:8px 0 0;font-size:13px">Confira a escala do dia: se a pessoa não estava trabalhando nesse horário, a avaliação não fala dela.</p>
+  </div>` : '';
 
   /* ------- o que exige ação agora ------- */
   const atencao = comAv.filter(x=>x.media < 3.5 || x.cr.length);
@@ -2887,13 +3043,13 @@ function desenharPanorama(){
       ${x.p.foto?`<img src="${x.p.foto}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex:none" alt="">`:`<span style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.08);flex:none;display:block"></span>`}
       <div style="flex:1;min-width:0">
         <b style="font-size:15px">${escHtml(nomeCargo(x.p.nome).n)}</b>
-        <div style="font-size:12px;color:var(--muted);font-weight:700">${x.media.toFixed(2)} de 5 · ${x.cr.length} ${x.cr.length===1?'pessoa reclamou':'pessoas reclamaram'}${x.picoT?` · mais avaliado de ${x.picoT.toLowerCase()}`:''}</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:700">${x.media.toFixed(2)} de 5 · ${x.cr.length} ${x.cr.length===1?'pessoa reclamou':'pessoas reclamaram'}${x.picoF?` · mais avaliado às ${x.picoF}`:''}</div>
       </div>
       <button class="btn-arq" style="padding:8px 14px;font-size:12px" onclick="fecharPanorama();abrirPerfilProf('${x.p.id}')">Abrir</button>
     </div>`).join('')}
   </div>` : (totalAv ? `<div class="bloco" style="border-color:rgba(76,217,123,.3)">
     <h3 style="color:var(--bom)">Precisa de conversa</h3>
-    <div class="vazio">Ninguém abaixo de 3,5 estrelas e nenhuma reclamação neste período. Time indo bem.</div>
+    <div class="vazio">Ninguém abaixo de 3,5 estrelas e nenhuma reclamação com esses filtros. Time indo bem.</div>
   </div>` : '');
 
   /* ------- pódio ------- */
@@ -2916,7 +3072,8 @@ function desenharPanorama(){
   const comentario = (a, tipo) => `
     <div style="border-left:3px solid ${tipo==='el'?'var(--bom)':'var(--ruim)'};background:${tipo==='el'?'rgba(76,217,123,.06)':'rgba(255,84,112,.06)'};border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:10px">
       <div style="font-size:11px;color:var(--muted);font-weight:800;letter-spacing:.4px;margin-bottom:4px">
-        ${new Date(a.ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})}
+        ${ehNova(a)?`<span style="background:var(--bom);color:#06210f;border-radius:99px;padding:2px 8px;margin-right:6px">NOVA</span>`:''}
+        ${dataOk(a.ts)?dataOk(a.ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'—'}
         · <span style="color:${CORTURNO[turnoDe(a)]||'var(--muted)'}">${horaCurta(a.ts)} ${turnoDe(a)}</span>
         · <span style="color:var(--dourado)">${'★'.repeat(a.estrelas)}${'☆'.repeat(5-a.estrelas)}</span>
       </div>
@@ -2948,6 +3105,7 @@ function desenharPanorama(){
         ${p.foto?`<img src="${p.foto}" style="width:74px;height:74px;border-radius:50%;object-fit:cover;border:3px solid ${corMedia}" alt="">`:`<span style="width:74px;height:74px;border-radius:50%;background:rgba(255,255,255,.08);display:block;flex:none"></span>`}
         <div style="flex:1;min-width:180px">
           <b style="font-family:var(--fTitulo);font-style:italic;font-size:24px;letter-spacing:1px">${escHtml(nomeCargo(p.nome).n)}</b>
+          ${x.novas?`<span style="background:var(--bom);color:#06210f;border-radius:99px;padding:3px 10px;font-size:11px;font-weight:900;margin-left:8px;vertical-align:middle">${x.novas} ${x.novas===1?'NOVA':'NOVAS'}</span>`:''}
           ${nomeCargo(p.nome).c?`<div style="color:var(--dourado);font-weight:900;font-style:italic;font-size:12px;letter-spacing:2px;text-transform:uppercase">${escHtml(nomeCargo(p.nome).c)}</div>`:''}
           <div style="color:var(--dourado);font-size:17px;margin-top:4px">${'★'.repeat(Math.round(media))}${'☆'.repeat(5-Math.round(media))}
             <span style="color:${corMedia};font-weight:900;font-size:15px">${media.toFixed(2)}</span>
@@ -2970,17 +3128,39 @@ function desenharPanorama(){
 
       <div style="margin-top:18px">
         <div style="font-size:12px;font-weight:900;letter-spacing:2px;color:var(--bom);margin-bottom:8px">ELOGIOS ESCRITOS (${elC.length})</div>
-        ${elC.length ? elC.map(a=>comentario(a,'el')).join('') : '<div class="vazio" style="padding:0 0 10px">Nenhum elogio escrito neste período.</div>'}
+        ${elC.length ? elC.map(a=>comentario(a,'el')).join('') : '<div class="vazio" style="padding:0 0 10px">Nenhum elogio escrito com esses filtros.</div>'}
         <div style="font-size:12px;font-weight:900;letter-spacing:2px;color:var(--ruim);margin:14px 0 8px">RECLAMAÇÕES ESCRITAS (${crC.length})</div>
-        ${crC.length ? crC.map(a=>comentario(a,'cr')).join('') : '<div class="vazio" style="padding:0 0 10px">Nenhuma reclamação escrita neste período.</div>'}
+        ${crC.length ? crC.map(a=>comentario(a,'cr')).join('') : '<div class="vazio" style="padding:0 0 10px">Nenhuma reclamação escrita com esses filtros.</div>'}
         ${semTexto>0?`<div class="vazio" style="padding:4px 0 0;font-size:13px">+ ${semTexto} ${semTexto===1?'pessoa avaliou':'pessoas avaliaram'} só com estrelas, sem escrever nada.</div>`:''}
       </div>
     </div>`;
   };
 
+  /* ------- paginação: 5 pessoas por vez ------- */
+  const totalPag = Math.max(1, Math.ceil(comAv.length / PAN_POR_PAG));
+  if(panPag > totalPag) panPag = totalPag;
+  const ini = (panPag-1)*PAN_POR_PAG;
+  const daPagina = comAv.slice(ini, ini + PAN_POR_PAG);
+
+  const navPag = totalPag > 1 ? `
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin:6px 0 18px">
+    <button onclick="panSetPag(${Math.max(1,panPag-1)})" ${panPag===1?'disabled':''} style="padding:10px 16px;border-radius:11px;font-weight:900;font-size:13px;cursor:${panPag===1?'default':'pointer'};border:1px solid var(--linha);background:rgba(255,255,255,.04);color:${panPag===1?'rgba(255,255,255,.2)':'var(--muted)'}">← Anterior</button>
+    ${Array.from({length:totalPag},(_,i)=>i+1).map(n=>`<button onclick="panSetPag(${n})" style="min-width:44px;padding:10px 12px;border-radius:11px;font-weight:900;font-size:14px;cursor:pointer;
+      border:1px solid ${n===panPag?'var(--dourado)':'var(--linha)'};
+      background:${n===panPag?'rgba(255,201,60,.18)':'rgba(255,255,255,.04)'};
+      color:${n===panPag?'var(--dourado)':'var(--muted)'}">${n}</button>`).join('')}
+    <button onclick="panSetPag(${Math.min(totalPag,panPag+1)})" ${panPag===totalPag?'disabled':''} style="padding:10px 16px;border-radius:11px;font-weight:900;font-size:13px;cursor:${panPag===totalPag?'default':'pointer'};border:1px solid var(--linha);background:rgba(255,255,255,.04);color:${panPag===totalPag?'rgba(255,255,255,.2)':'var(--muted)'}">Próxima →</button>
+  </div>` : '';
+
+  const tituloLista = comAv.length ? `
+  <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:22px 0 12px">
+    <h3 style="margin:0;font-size:15px;letter-spacing:2px;color:var(--dourado);font-style:italic;text-transform:uppercase">Pessoa por pessoa · da melhor nota para a menor</h3>
+    <span style="font-size:12px;color:var(--muted);font-weight:800">mostrando ${ini+1}–${Math.min(ini+PAN_POR_PAG, comAv.length)} de ${comAv.length}${totalPag>1?` · página ${panPag} de ${totalPag}`:''}</span>
+  </div>` : (totalAv===0 && lista.length ? `<div class="bloco"><div class="vazio">Ninguém foi avaliado com esses filtros. Troque o período ou o horário aí em cima.</div></div>` : '');
+
   const semDados = semAv.length ? `
   <div class="bloco">
-    <h3 style="color:var(--muted)">Sem avaliação neste período (${semAv.length})</h3>
+    <h3 style="color:var(--muted)">Sem avaliação com esses filtros (${semAv.length})</h3>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       ${semAv.map(x=>`<span style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border-radius:99px;padding:6px 14px 6px 6px">
         ${x.p.foto?`<img src="${x.p.foto}" style="width:30px;height:30px;border-radius:50%;object-fit:cover" alt="">`:`<span style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.08);display:block"></span>`}
@@ -2989,8 +3169,8 @@ function desenharPanorama(){
     <p class="vazio" style="padding:12px 0 0">Pode ser folga, entrada recente ou pouca exposição no balcão. Não significa avaliação ruim.</p>
   </div>` : '';
 
-  alvo.innerHTML = barraPeriodo + topo + blocoAtencao + podio
-    + (comAv.length ? `<div class="bloco" style="background:none;border:none;padding:0;margin-bottom:8px"><h3 style="margin:0">Pessoa por pessoa · da melhor nota para a menor</h3></div>` + comAv.map(cartaoPessoa).join('') : '')
+  alvo.innerHTML = barras + faixaNovas + topo + blocoSusp + blocoAtencao + podio
+    + tituloLista + navPag + daPagina.map(cartaoPessoa).join('') + (daPagina.length?navPag:'')
     + semDados;
   alvo.scrollTop = 0;
 }

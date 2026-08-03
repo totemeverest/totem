@@ -1,16 +1,16 @@
-# Totem Everest → Central Everest: guia de integração
+# Totem Everest → Central Everest (estrutura ATUAL)
 
-Respostas na ordem das perguntas.
+> Versão de 25/07/2026. **O sistema de prêmios mudou completamente** desde
+> a primeira documentação: não existe mais "roleta única com um alvo".
+> Agora são vários prêmios em paralelo, cada um com meta própria.
 
-## 1. Onde ficam os dados
+## Acesso
 
-**Firebase Firestore é a fonte da verdade.** O tablet salva primeiro em
-localStorage (pra funcionar offline) e sincroniza em tempo real com o
-Firestore (listeners `onSnapshot`). Qualquer aparelho que abra o site
-lê tudo da nuvem.
+Firestore é a fonte da verdade. O tablet grava local (offline) e sincroniza
+em tempo real. Leitura exige **login anônimo** (já ativado no projeto).
 
-- **Projeto:** `totem-everest` (região southamerica-east1)
-- **Config do app Web** (chaves públicas de cliente, pode usar):
+- **Projeto:** `totem-everest` (southamerica-east1)
+- **Site:** https://everestacademias.com/totem/
 
 ```js
 const FIREBASE_CONFIG = {
@@ -22,156 +22,233 @@ const FIREBASE_CONFIG = {
   appId: "1:905492214266:web:602edba7a94ada89b63443"
 };
 ```
+Regras: `allow read, write: if request.auth != null;` → use o SDK +
+`signInAnonymously()`. REST puro sem token NÃO funciona.
 
-**Coleções** (docId = campo `uid` do documento):
+---
 
-| Coleção | Conteúdo |
-|---|---|
-| `avaliacoes` | avaliações da academia (11 perguntas) |
-| `professores` | cadastro da equipe (nome, cargo, foto) |
-| `avaliacoes_professores` | avaliações individuais da equipe (estrelas 1–5) |
-| `premios` | códigos de prêmio gerados pela roleta |
-| `config` (doc único `geral`) | configurações: botão equipe ligado + roleta |
+## 1. Coleções atuais
 
-Fotos da equipe e do prêmio ficam DENTRO dos documentos, como
-data-URL base64 (JPEG ~50 KB). Não usamos Firebase Storage.
-
-## 2. Dá pra ler de fora?
-
-Sim, mas **não sem login**. Regras atuais:
-
-```
-allow read, write: if request.auth != null;
-```
-
-O provedor **Anônimo** está ativado no projeto. Então a Central só
-precisa: inicializar um app secundário com a config acima →
-`signInAnonymously()` → ler as coleções. É exatamente como o próprio
-totem faz. Não mude as regras pra leitura pública — anônimo já resolve
-e mantém fechado pra quem não usa nossos apps.
-
-Atenção: REST sem token NÃO funciona com essas regras — use o SDK
-(compat ou modular) com auth anônima.
-
-## 3. Sincronização / aparelhos
-
-- 1 tablet (M10, Fully/Samsung Browser) rodando o totem + o PC do
-  Wilson abrindo o mesmo link. Ambos leem/escrevem no mesmo Firestore.
-- Avaliação feita offline fica com `sync:false` no localStorage e sobe
-  sozinha quando a internet volta. Ao ler o Firestore você já vê tudo
-  que foi sincronizado.
-- **Backup**: gera JSON `backup_totem_everest_AAAA-MM-DD-HH-MM.json`:
-
-```json
-{ "tipo": "backup_totem_everest", "versao": 2, "gerado": "ISO",
-  "avaliacoes": [], "professores": [], "avaliacoes_professores": [],
-  "premios": [], "roleta": {}, "prof_ativo": "0|1" }
-```
-
-## 4. O que exige ação humana (sinais pra Central)
-
-1. **Prêmio aguardando entrega** — o mais importante e o único com
-   flag no banco: docs de `premios` com `entregue == false`.
-   Wilson confere o código apresentado pelo aluno e marca entregue
-   no relatório do totem.
-2. **Crítica nova não lida** — NÃO existe flag "lida" no banco. O
-   relatório do totem marca "visto" só em localStorage do aparelho do
-   Wilson. Pra Central: guarde seu próprio marcador local (timestamp
-   da última visita) e conte `avaliacoes` com `ts >` marcador que
-   sejam críticas (regra no item 6).
-3. **Avaliação de equipe nova** — mesmo esquema: `avaliacoes_professores`
-   com `ts >` seu marcador local.
-4. Bônus que a Central pode mostrar: **ciclo do prêmio quase batendo**
-   — leia `config/geral → roleta`: conte `avaliacoes` com
-   `ts > roleta.cicloInicio`; se `roleta.ativa` e a contagem está a
-   poucas do `roleta.alvo`, o próximo prêmio está pra sair (bom pra
-   equipe se preparar).
-
-## 5. Números que fazem sentido
-
-Os seus 4 são exatamente os certos. Sugestão de cartão:
-
-- Avaliações hoje (e do mês)
-- Média da experiência geral (1 a 4) + Indicação média (0 a 10)
-- **Prêmios aguardando entrega** (destaque vermelho, é ação)
-- Críticas novas desde a última visita
-- Extra: progresso do ciclo do prêmio (ex.: "187 de 200")
-
-## 6. Campos, tipos e valores
-
-### `avaliacoes` (1 doc por avaliação)
-
-| Campo | Tipo | Valores |
+| Coleção | O que é | Mudou? |
 |---|---|---|
-| `uid` | string | id único, = docId |
-| `num` | number | sequencial |
-| `ts` | string | data ISO 8601 UTC: `"2026-07-18T12:33:17.123Z"` (compare como string ou `new Date(ts)`) |
-| `turno` | string | `"Manhã"` \| `"Tarde"` \| `"Noite"` |
-| `horario` | string | `"05h às 08h"`, `"08h às 11h"`, `"11h às 13h"`, `"13h às 16h"`, `"16h às 19h"`, `"19h às 21h"`, `"21h às 23h"` |
-| `area` | string | `"MUSCULAÇÃO"` \| `"ERGOMETRIA / CARDIO"` \| `"AULAS COLETIVAS"` |
-| `geral`, `recepcao`, `professores`, `treino`, `limpeza`, `equipamentos`, `estrutura`, `ambiente` | string | `"RUIM"` \| `"REGULAR"` \| `"BOM"` \| `"EXCELENTE"` |
-| `arenakids`, `quiosque`, `vestiarios` | string | os 4 acima **ou** `"NÃO UTILIZO"` |
-| `nps` | number | 0 a 10 (exibido como "indicação") |
-| `c_atendimento`, `c_treino`, `c_limpeza`, `c_equipamentos`, `c_estrutura`, `c_vestiarios`, `c_ambiente`, `sugestao` | string | texto livre, pode ser `""` |
+| `avaliacoes` | avaliações da academia (11 perguntas) | igual, +1 campo (`treino`) |
+| `professores` | equipe (nome, cargo, foto) | igual |
+| `avaliacoes_professores` | avaliações da equipe (1–5 estrelas) | igual |
+| `premios` | **códigos gerados** (quem ganhou) | igual |
+| **`premios_config`** | **definições dos prêmios — NOVA** | 🆕 |
+| `config` doc `geral` | chaves gerais | simplificou |
 
-Média numérica: `RUIM=1, REGULAR=2, BOM=3, EXCELENTE=4`
-(ignore `"NÃO UTILIZO"` e ausentes).
+DocId = campo `uid` do documento em todas elas. Fotos são data-URL JPEG
+(~50 KB) dentro do próprio documento — não usamos Storage.
 
-**Regra oficial de classificação** (use igual pra bater com o totem):
-- **Crítica**: qualquer campo com RUIM/REGULAR, ou `nps <= 5`, ou
-  pergunta sem resposta
-- **Elogio**: campos BOM/EXCELENTE e `nps >= 6`
-- A MESMA avaliação pode contar nos dois lados (ela se divide)
+---
 
-### `avaliacoes_professores`
+## 2. Sistema de prêmios (o que mais mudou)
 
-`uid` (docId), `num` number, `ts` ISO string, `prof` (id do membro,
-number — bate com `professores.id`), `nome` string (nome na época),
-`estrelas` number 1–5, `comentario` string.
-Crítica = estrelas ≤ 3 · Elogio = estrelas ≥ 4. Ranking é mensal
-(agrupe por `ts.slice(0,7)`).
+### Onde ficam as definições: `premios_config`
 
-### `professores`
-
-`uid` (docId), `id` number, `nome` string no formato `"Nome - Cargo"`
-(split em `" - "`), `foto` string dataURL ou null.
-
-### `premios`
-
-`uid` (docId), `codigo` string `"EVR-XXXXXX"`, `ts` ISO string,
-`premio` string (nome), `entregue` boolean. **Ação = entregue:false.**
-
-### `config/geral`
-
-`prof_ativo` string `"0"|"1"`; `roleta` objeto: `{ativa:boolean,
-nome, desc, regras:string, foto:dataURL, alvo:number,
-local:"academia"|"qualquer", cicloInicio:ISO string}`.
-
-## Exemplo real (anonimizado)
-
-```json
-// avaliacoes/1752861234567-ab12cd
+```js
 {
-  "uid": "1752861234567-ab12cd", "num": 42,
-  "ts": "2026-07-18T12:33:17.123Z",
-  "turno": "Noite", "horario": "19h às 21h", "area": "MUSCULAÇÃO",
-  "geral": "BOM", "recepcao": "EXCELENTE", "professores": "EXCELENTE",
-  "arenakids": "NÃO UTILIZO", "quiosque": "REGULAR", "treino": "BOM",
-  "limpeza": "EXCELENTE", "equipamentos": "RUIM", "estrutura": "BOM",
-  "vestiarios": "BOM", "ambiente": "BOM",
-  "nps": 8,
-  "c_atendimento": "", "c_treino": "", "c_limpeza": "",
-  "c_equipamentos": "esteira 3 fazendo barulho", "c_estrutura": "",
-  "c_vestiarios": "", "c_ambiente": "", "sugestao": "mais anilhas de 10",
-  "inicio": 1752861100000, "sync": true
+  uid: "1753460000000-a1b2c3",   // = docId
+  nome: "CREATINA 300G",
+  desc: "Um pote de creatina monohidratada 300g...",
+  foto: "data:image/jpeg;base64,...",   // pode ser ""
+  alvo: 200,                    // META: sorteia a cada N avaliações
+  regras: "Válido só na academia · Retire em 7 dias",
+  repete: true,                 // true = contínuo | false = 1 vez só
+  vezes: 3,                     // quantas vezes já saiu
+  ativo: true,                  // false = pausado pelo Wilson
+  ordem: 2,                     // desempate quando dois batem juntos
+  cicloInicio: "2026-07-25T12:00:00.000Z",  // início da contagem ATUAL
+  aguardando: false,            // bateu a meta e está na fila (ver abaixo)
+  aguardandoDesde: null,
+  ultimoCodigo: "EVR-4F8K2M",   // último código que saiu deste prêmio
+  ultimoTs: "2026-07-25T18:22:00.000Z",
+  ganhou: false,                // só p/ repete=false: travado após ganhador
+  codigo: null, ganhouTs: null, // preenchidos quando trava
+  sync: true                    // controle interno do tablet — ignore
 }
-
-// premios/1752861300000-xy98zw
-{ "uid": "1752861300000-xy98zw", "codigo": "EVR-4F8K2M",
-  "ts": "2026-07-18T12:35:00.000Z", "premio": "UM MÊS GRÁTIS",
-  "entregue": false, "sync": true }
 ```
 
-Com isso dá pra ligar na Central igual à corrida: auth anônima →
-`onSnapshot` em `avaliacoes` e `premios` → cartões com "prêmios a
-entregar" e "críticas novas" como sinais de ação.
+### Como calcular o progresso (não existe contador salvo)
+
+```js
+progresso = avaliacoes.filter(a => a.ts > premio.cicloInicio).length
+falta     = premio.alvo - progresso
+```
+Cada prêmio conta **em paralelo**, cada um com seu `cicloInicio`.
+Quando alguém ganha um prêmio contínuo, o `cicloInicio` dele vira o
+instante do sorteio (recomeça do zero) — os outros seguem contando.
+
+**Prêmios que estão contando:** `ativo === true && ganhou !== true && alvo > 0`
+**Só conta se a chave geral estiver ligada:** `config/geral.roleta.ativa === true`
+
+### Regra "um prêmio por pessoa" (importante)
+
+Se dois prêmios batem a meta na mesma avaliação, **só um sai**. Os outros
+recebem `aguardando: true` e saem para o **próximo avaliador**.
+Então, na Central: um prêmio com `aguardando === true` significa
+"vai sair na próxima avaliação" (progresso já passou da meta).
+
+### O que é gravado quando alguém ganha: coleção `premios`
+
+```js
+{
+  uid: "1753461234567-xy98zw",  // = docId
+  codigo: "EVR-4F8K2M",         // o que o aluno mostra na recepção
+  ts: "2026-07-25T18:22:00.000Z",
+  premio: "CREATINA 300G",      // cópia do nome na hora do sorteio
+  desc: "...", foto: "data:...", regras: "...",   // cópia fiel
+  premioUid: "1753460000000-a1b2c3",  // aponta pro premios_config
+  entregue: false,              // ⬅️ AÇÃO: false = aguardando retirada
+  sync: true
+}
+```
+
+---
+
+## 3. Como calcular cada indicador
+
+Escala das notas: `RUIM=1, REGULAR=2, BOM=3, EXCELENTE=4`.
+`"NÃO UTILIZO"` = não usa a área (ignore nas médias).
+
+**Categorias (11)** — chaves em `avaliacoes`:
+`geral, recepcao, professores, arenakids, quiosque, treino, limpeza,
+equipamentos, estrutura, vestiarios, ambiente`
+
+```js
+const CATS = ['geral','recepcao','professores','arenakids','quiosque',
+              'treino','limpeza','equipamentos','estrutura','vestiarios','ambiente'];
+const VAL = {RUIM:1, REGULAR:2, BOM:3, EXCELENTE:4};
+
+// avaliações no total / hoje
+const total = avaliacoes.length;
+const hoje  = avaliacoes.filter(a => new Date(a.ts).toDateString() === new Date().toDateString()).length;
+
+// ===== REGRA OFICIAL (a mesma do totem) =====
+const temNegativo = a => CATS.some(c => a[c]==='RUIM' || a[c]==='REGULAR');
+const temPositivo = a => CATS.some(c => a[c]==='BOM'  || a[c]==='EXCELENTE');
+const semResposta = a => CATS.some(c => !a[c]);
+
+const eCritica = a => temNegativo(a) || semResposta(a)
+                   || typeof a.nps !== 'number' || a.nps <= 5;
+const eElogio  = a => temPositivo(a) || (typeof a.nps === 'number' && a.nps >= 6);
+// ⚠️ a MESMA avaliação pode contar dos dois lados (ela se divide)
+
+// indicação média (0 a 10) — substituiu o NPS clássico no painel
+const notas = avaliacoes.map(a=>a.nps).filter(n=>typeof n==='number');
+const indicacaoMedia = notas.length ? (notas.reduce((x,y)=>x+y,0)/notas.length).toFixed(1) : '—';
+
+// % experiência excelente
+const pctExcelente = Math.round(avaliacoes.filter(a=>a.geral==='EXCELENTE').length / total * 100);
+
+// média geral (1 a 4)
+const vals = avaliacoes.map(a=>VAL[a.geral]).filter(Boolean);
+const mediaGeral = (vals.reduce((x,y)=>x+y,0)/vals.length).toFixed(2);
+
+// ⭐ PRÊMIOS A ENTREGAR (a ação mais importante)
+const aEntregar = premios.filter(p => p.entregue === false);
+
+// próximo prêmio a sair
+const ativos = premios_config.filter(p => p.ativo && !p.ganhou && p.alvo > 0);
+const proximo = ativos.map(p => ({
+    nome: p.nome,
+    falta: p.aguardando ? 0 : Math.max(0, p.alvo - avaliacoes.filter(a=>a.ts > p.cicloInicio).length)
+  })).sort((a,b)=>a.falta-b.falta)[0];
+// → "faltam 47 avaliações pro próximo prêmio: CREATINA 300G"
+// → se falta === 0 e aguardando: "sai na próxima avaliação"
+```
+
+**Crítica "lida/vista": NÃO existe no banco.** É só localStorage do
+aparelho do Wilson (`everest_visto_criticas`, `everest_visto_elogios`,
+`everest_visto_profs`). A Central precisa do **próprio marcador local**:
+guarde o timestamp da última visita e conte `a.ts > seuMarcador`.
+
+**Equipe:** em `avaliacoes_professores`, crítica = `estrelas <= 3`,
+elogio = `estrelas >= 4`. Ranking é mensal (agrupe por `ts.slice(0,7)`).
+
+**🆕 Horário da avaliação da equipe.** Os documentos novos trazem `faixa`
+("19h às 21h") e `turno` ("Manhã" | "Tarde" | "Noite" | "Madrugada").
+Como o totem fica **na recepção**, essa é a hora REAL em que o aluno
+estava na academia — serve pro dono conferir quem estava trabalhando.
+Diferente das avaliações da academia, onde `horario`/`turno` são
+**informados pelo aluno** (em que horário ele costuma treinar).
+
+Documentos antigos não têm os campos — derive do `ts`:
+```js
+const faixaDaHora = ts => { const h = new Date(ts).getHours();
+  if(h>=5&&h<8)  return '05h às 08h'; if(h>=8&&h<11) return '08h às 11h';
+  if(h>=11&&h<13)return '11h às 13h'; if(h>=13&&h<16)return '13h às 16h';
+  if(h>=16&&h<19)return '16h às 19h'; if(h>=19&&h<21)return '19h às 21h';
+  if(h>=21&&h<24)return '21h às 23h'; return 'Madrugada'; };
+const faixaDe = a => a.faixa || faixaDaHora(a.ts);
+```
+
+---
+
+## 4. Exemplos reais (anonimizados)
+
+```js
+// avaliacoes/1753459123456-ab12cd
+{
+  uid:"1753459123456-ab12cd", num:42, ts:"2026-07-25T18:33:17.123Z",
+  turno:"Noite", horario:"19h às 21h", area:"MUSCULAÇÃO",
+  geral:"BOM", recepcao:"EXCELENTE", professores:"EXCELENTE",
+  arenakids:"NÃO UTILIZO", quiosque:"REGULAR", treino:"BOM",
+  limpeza:"EXCELENTE", equipamentos:"RUIM", estrutura:"BOM",
+  vestiarios:"BOM", ambiente:"BOM", nps:8,
+  c_atendimento:"", c_treino:"", c_limpeza:"",
+  c_equipamentos:"esteira 3 fazendo barulho", c_estrutura:"",
+  c_vestiarios:"", c_ambiente:"", sugestao:"mais anilhas de 10",
+  inicio:1753459100000, sync:true
+}
+// → eCritica: true (equipamentos RUIM) · eElogio: true (tem BOM/EXCELENTE e nps 8)
+
+// premios_config/1753460000000-a1b2c3   (definição)
+{ uid:"1753460000000-a1b2c3", nome:"CREATINA 300G",
+  desc:"Um pote de creatina monohidratada 300g para turbinar seus treinos",
+  foto:"data:image/jpeg;base64,/9j/4AAQ...", alvo:200,
+  regras:"Válido só na academia · Retire na recepção em até 7 dias",
+  repete:true, vezes:1, ativo:true, ordem:1,
+  cicloInicio:"2026-07-25T18:22:00.000Z", aguardando:false, aguardandoDesde:null,
+  ultimoCodigo:"EVR-4F8K2M", ultimoTs:"2026-07-25T18:22:00.000Z",
+  ganhou:false, codigo:null, ganhouTs:null, sync:true }
+
+// premios/1753461234567-xy98zw   (código ganho — AÇÃO se entregue:false)
+{ uid:"1753461234567-xy98zw", codigo:"EVR-4F8K2M",
+  ts:"2026-07-25T18:22:00.000Z", premio:"CREATINA 300G",
+  desc:"Um pote de creatina monohidratada 300g...", foto:"data:image/jpeg;base64,...",
+  regras:"Válido só na academia · Retire na recepção em até 7 dias",
+  premioUid:"1753460000000-a1b2c3", entregue:false, sync:true }
+
+// avaliacoes_professores/1753462000000-kk11ll
+{ uid:"1753462000000-kk11ll", num:7, ts:"2026-07-25T19:10:00.000Z",
+  prof:1753440000000, nome:"Alana - Consultora de vendas",
+  faixa:"19h às 21h", turno:"Noite",   // 🆕 hora REAL da avaliação no totem
+  estrelas:5, comentario:"Muito atenciosa, me ajudou a escolher o plano", sync:true }
+
+// professores/1753440000000-pp22qq
+{ uid:"1753440000000-pp22qq", id:1753440000000,
+  nome:"Alana - Consultora de vendas",   // formato "Nome - Cargo" (split em " - ")
+  foto:"data:image/jpeg;base64,...", sync:true }
+
+// config/geral   (documento único)
+{ prof_ativo: "1",              // "1" = botão AVALIAR EQUIPE visível no totem
+  roleta: { ativa: true } }     // chave geral dos prêmios (liga/desliga todos)
+```
+
+---
+
+## 5. Sugestão pro cartão da Central
+
+Os 4 sinais que fazem o gestor agir, na ordem:
+
+1. **Prêmios a entregar** — `premios.filter(p=>!p.entregue).length` · vermelho/âmbar,
+   é a única ação concreta com flag no banco. Mostrar código + data do mais antigo.
+2. **Críticas novas** — desde o marcador local da Central.
+3. **Elogios** (verde) e **Equipe** — moral do time.
+4. **Saúde:** nota geral (x/4) + indicação média (x/10) + % excelente.
+5. **Próximo prêmio:** "faltam 47 avaliações · CREATINA 300G"
+   (ou "sai na próxima avaliação" quando `aguardando === true`).
+
+Evite mostrar `vezes`/`ciclo` cru — não diz nada pro gestor.

@@ -1,12 +1,15 @@
-/* Service worker do Totem Everest — v3
-   Correções desta versão:
+/* Service worker do Totem Everest — v4
+   Mudar este número é o que faz o tablet baixar a versão nova da página.
+   Sempre que o index.html for atualizado, suba o número aqui também.
+
+   Correções que já estavam na v3 e continuam valendo:
    - NUNCA guarda resposta com erro (404/500) no cache. Era isso que deixava
      a página "quebrada" depois de atualizar os arquivos no GitHub.
    - A página sempre tenta a internet primeiro (limite de 7s) e só usa a
      cópia guardada se a internet falhar.
    - Aceita o comando "ATUALIZAR_AGORA" pra limpar tudo e assumir a versão nova.
 */
-const VERSAO = 'v3';
+const VERSAO = 'v4';
 const CACHE = 'totem-everest-' + VERSAO;
 const ESSENCIAIS = ['./', './index.html', './manifest.json', './logo1.png'];
 const LIMITE_MS = 7000;

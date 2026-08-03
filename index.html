@@ -601,6 +601,15 @@ body.teclado .voltar{padding:6px 12px;font-size:11px}
   <div class="pcorpo" id="ppCorpo"></div>
 </div>
 
+<!-- PANORAMA DA EQUIPE: tudo de todo mundo numa tela só -->
+<div class="painel perfilp" id="panoramaEquipe" style="z-index:67">
+  <header>
+    <div class="ptit"><b>PANORAMA DA EQUIPE</b></div>
+    <div class="hbtns"><button onclick="fecharPanorama()">✕ Fechar</button></div>
+  </header>
+  <div class="pcorpo" id="panCorpo"></div>
+</div>
+
 <!-- AJUSTE DE FOTO (prévia estilo WhatsApp: arrastar + zoom) -->
 <div class="pin" id="ajusteFoto" style="z-index:80">
   <div class="caixa" style="width:min(420px,94vw)">
@@ -718,6 +727,11 @@ body.teclado .voltar{padding:6px 12px;font-size:11px}
           </div>
         </div>
         <p class="vazio" id="profFotoStatus" style="padding:8px 0 0">Sem foto escolhida — a foto é ajustada automaticamente pro tamanho padrão.</p>
+      </div>
+      <div class="bloco" style="background:linear-gradient(135deg,rgba(255,201,60,.12),rgba(107,74,255,.10));border-color:rgba(255,201,60,.35)">
+        <h3 style="margin-bottom:8px">Ver tudo da equipe de uma vez</h3>
+        <p class="vazio" style="padding:0 0 14px">Uma tela só com todo mundo: nota, horários, e todos os elogios e reclamações que os alunos escreveram sobre cada pessoa.</p>
+        <button class="btn-arq ouro2" style="font-size:15px;padding:14px 26px" onclick="abrirPanorama()">📋 ABRIR PANORAMA DA EQUIPE</button>
       </div>
       <div class="bloco">
         <h3>Top da equipe do mês</h3>
@@ -856,6 +870,32 @@ const IDLE_MS = 60000;               // volta pro início após 60s parado
 const HORARIOS = ["05h às 08h","08h às 11h","11h às 13h","13h às 16h","16h às 19h","19h às 21h","21h às 23h"];
 const TURNO = h => { const i = HORARIOS.indexOf(h); return i<=1 ? "Manhã" : i<=3 ? "Tarde" : "Noite"; };
 
+/* ===== Hora REAL em que a avaliação foi feita no totem =====
+   Como o totem fica na recepção, a hora do tablet é a hora em que a
+   pessoa estava dentro da academia. Serve para o dono cruzar quem
+   estava trabalhando naquele momento. */
+function faixaDaHora(ts){
+  const h = new Date(ts).getHours();
+  if(h>=5  && h<8)  return '05h às 08h';
+  if(h>=8  && h<11) return '08h às 11h';
+  if(h>=11 && h<13) return '11h às 13h';
+  if(h>=13 && h<16) return '13h às 16h';
+  if(h>=16 && h<19) return '16h às 19h';
+  if(h>=19 && h<21) return '19h às 21h';
+  if(h>=21 && h<24) return '21h às 23h';
+  return 'Madrugada';
+}
+function turnoDaHora(ts){
+  const f = faixaDaHora(ts);
+  if(f==='Madrugada') return 'Madrugada';
+  return TURNO(f);
+}
+/* funciona também nos registros antigos, que não têm os campos salvos */
+const faixaDe = a => a.faixa || faixaDaHora(a.ts);
+const turnoDe = a => a.turno || turnoDaHora(a.ts);
+const horaCurta = ts => new Date(ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+const CORTURNO = { 'Manhã':'#ffc861', 'Tarde':'#ff9d5c', 'Noite':'#8b7cff', 'Madrugada':'#5ec8d8' };
+
 /* ================= ÍCONES PRÓPRIOS (SVG, sem emoji) ================= */
 const A = 'fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"';
 const IC = {
@@ -991,7 +1031,8 @@ window.addEventListener('orientationchange', ()=>setTimeout(ajustarAoEcra, 450))
 function rolarAteCampo(){
   const el = document.activeElement;
   if(el && (el.tagName==='TEXTAREA' || el.tagName==='INPUT')){
-    try{ el.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){ el.scrollIntoView(); }
+    try{ el.scrollIntoView({block:'center', behavior:'smooth'}); }
+    catch(e){ try{ el.scrollIntoView(); }catch(e2){} }
   }
 }
 function campoFocado(){
@@ -1219,7 +1260,7 @@ function finalizar(){
   resposta.ts = new Date().toISOString();
   resposta.turno = TURNO(resposta.horario || '');
   try{
-    const lista = JSON.parse(localStorage.getItem(CHAVE) || '[]');
+    const lista = lerLista(CHAVE);
     resposta.num = lista.length + 1;   // número único da sessão/pessoa
     resposta.uid = novoUid();
     resposta.sync = false;
@@ -1365,7 +1406,7 @@ function casaBusca(r){
 }
 
 /* ---- auditorias (para não repetir avaliação já analisada) ---- */
-function auditorias(){ try{ return JSON.parse(localStorage.getItem(KAUDIT)||'[]'); }catch(e){ return []; } }
+function auditorias(){ return lerLista(KAUDIT); }
 function ultimaAuditoria(){
   const l = auditorias().filter(a=>a.ate).sort((a,b)=>String(a.ts).localeCompare(String(b.ts)));
   return l[l.length-1] || null;
@@ -1411,11 +1452,34 @@ function atalhoAudit(tipo){
   desenharAuditoria();
 }
 
-function dados(){ try{ return JSON.parse(localStorage.getItem(CHAVE)||'[]'); }catch(e){ return []; } }
+/* Leitura BLINDADA do armazenamento.
+   Se o conteúdo estiver corrompido, for null, texto solto ou o tipo errado,
+   devolve lista/objeto vazio em vez de derrubar a tela toda. */
+function lerLista(chave){
+  try{
+    const v = JSON.parse(localStorage.getItem(chave) || '[]');
+    if(!Array.isArray(v)) return [];
+    return v.filter(x => x && typeof x === 'object');
+  }catch(e){ return []; }
+}
+function lerObjeto(chave){
+  try{
+    const v = JSON.parse(localStorage.getItem(chave) || '{}');
+    return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+  }catch(e){ return {}; }
+}
+/* data segura: devolve null se o carimbo de hora estiver quebrado */
+function dataOk(ts){
+  if(!ts) return null;
+  const d = new Date(ts);
+  return isNaN(d.getTime()) ? null : d;
+}
+function dados(){ return lerLista(CHAVE); }
 function dentroPeriodo(r){
   if(periodoAtual==='TUDO') return true;
   if(!r.ts) return false;
-  const t = new Date(r.ts), agora = new Date();
+  const t = dataOk(r.ts); if(!t) return false;
+  const agora = new Date();
   if(periodoAtual==='HOJE') return t.toDateString()===agora.toDateString();
   if(periodoAtual==='7D')  return agora-t <= 7*864e5;
   if(periodoAtual==='30D') return agora-t <= 30*864e5;
@@ -1436,7 +1500,7 @@ function abrirPainel(){
   try{
     ['avaliacoes','professores','avaliacoes_professores'].forEach(col=>{
       const k = chaveLocal(col);
-      const l = JSON.parse(localStorage.getItem(k)||'[]');
+      const l = lerLista(k);
       let mudou = false;
       l.forEach((r,i)=>{
         if(col==='avaliacoes' && !r.num){ r.num = i+1; mudou = true; }
@@ -1646,7 +1710,7 @@ function comentariosAgrupados(lista, tipo){
     <div class="depo ${tipo==='critica'?'neg':'pos'}">
       <div class="depo-topo">
         <span class="depo-num">AVALIAÇÃO #${r.num??'?'}</span>
-        <span class="depo-meta">${r.ts?new Date(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}${r.horario?' &nbsp;·&nbsp; treina '+escHtml(r.horario):''}${r.area?' &nbsp;·&nbsp; '+escHtml(r.area):''}</span>
+        <span class="depo-meta">${dataOk(r.ts)?dataOk(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}${r.horario?' &nbsp;·&nbsp; treina '+escHtml(r.horario):''}${r.area?' &nbsp;·&nbsp; '+escHtml(r.area):''}</span>
       </div>
       ${falas.map(f=>`<div class="depo-fala"><span class="assunto">${f.nome}</span><p>“${escHtml(f.txt)}”</p>${f.ctx?`<small class="ctx-notas">notas que essa pessoa deu aqui → ${f.ctx}</small>`:''}</div>`).join('')}
     </div>`).join('') + rodape;
@@ -1696,7 +1760,7 @@ function desenharComparativo(){
     ${linha('Críticas', a.criticas||null, b.criticas||null, 0, '', false)}`;
 }
 function cartaoFeedback(r, tipo){
-  const dt = new Date(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+  const dt = dataOk(r.ts) ? dataOk(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : 'sem data';
   let tags = '';
   if(tipo==='critica'){
     // só a parte negativa dessa pessoa
@@ -1773,7 +1837,7 @@ function compartilharResumo(){
   if(ultimas.length){
     txt += `\n*Últimas críticas:*\n`;
     ultimas.forEach(r=>{
-      const dt = r.ts ? new Date(r.ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '—';
+      const dt = dataOk(r.ts) ? dataOk(r.ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '—';
       const ruins = CATS.filter(([id])=>r[id]==='RUIM'||r[id]==='REGULAR').map(([,n])=>n).join(', ');
       txt += `• ${dt} · ${r.horario||'—'}${ruins?` · ${ruins}`:''}${typeof r.nps==='number'?` · nota ${r.nps}/10`:''}\n`;
       COMENTS.forEach(([id,n])=>{ if(r[id] && String(r[id]).trim() && ladoComentario(r,id)==='critica') txt += `   "${String(r[id]).trim().slice(0,100)}"\n`; });
@@ -1837,58 +1901,85 @@ COMO OS DADOS FUNCIONAM (para você interpretar certo):
 - Regra da casa: RUIM/REGULAR, indicação de 0 a 5 ou pergunta em branco = CRÍTICA. BOM/EXCELENTE e indicação de 6 a 10 = ELOGIO. A mesma pessoa pode elogiar uma coisa e criticar outra.
 - Vale o que a pessoa CLICOU, não o que ela escreveu. Um texto simpático numa nota RUIM continua sendo crítica.
 
+PROIBIDO ENROLAR — leia estas 8 regras antes de escrever:
+1. NÃO escreva introdução, nem "vou analisar", nem "com base nos dados fornecidos". Comece direto no título "0) PAINEL DE 30 SEGUNDOS".
+2. NÃO repita estas instruções nem explique sua metodologia.
+3. Toda frase precisa trazer informação NOVA. Se uma frase não muda nada que o Wilson vá fazer, apague ela.
+4. Nada de "é importante ressaltar", "vale destacar", "de modo geral", "de forma geral", "cabe pontuar".
+5. Cada recomendação começa com um VERBO NO IMPERATIVO ("Troque", "Ligue", "Converse com", "Compre").
+6. NUNCA diga só "melhorar o atendimento". Diga O QUE fazer, ONDE, EM QUE HORÁRIO e QUEM faz.
+7. Se um dado não existe no arquivo, escreva "sem dados suficientes" e siga. Não invente e não peça mais informação.
+8. Não termine perguntando se ele quer mais alguma coisa. Termine no item 10.
+
 ESCREVA EXATAMENTE ESTE RELATÓRIO, NESTA ORDEM, COM ESTES TÍTULOS:
 
+0) PAINEL DE 30 SEGUNDOS
+   Comece com uma linha só: "SITUAÇÃO: VERDE / AMARELO / VERMELHO — [motivo em até 10 palavras]"
+   (VERDE = nada urgente · AMARELO = tem incômodo repetido · VERMELHO = risco de aluno cancelar ou reclamar em público)
+   Depois, exatamente 3 marcadores:
+   • FAZER PRIMEIRO: uma ação, com prazo, custo aproximado e quem executa.
+   • MAIOR RECLAMAÇÃO: o assunto mais citado + quantas pessoas falaram.
+   • MELHOR NOTÍCIA: o ponto mais forte + quantas pessoas elogiaram.
+   Nada além disso neste item.
+
 1) RESUMO EM 5 LINHAS
-   Como a academia está indo, em português simples. Se estiver bem, diga que está bem.
-   Termine com a frase: "Se você só puder fazer uma coisa esta semana, faça: ____".
+   Como a academia está indo, em português simples. Se estiver bem, diga que está bem, sem dourar.
+   Termine com: "Se você só puder fazer uma coisa esta semana, faça: ____".
 
 2) OS NÚMEROS EXPLICADOS
-   Liste os principais números e, ao lado de cada um, uma frase explicando se é bom, ruim ou normal, e por quê.
+   Máximo 8 linhas, formato "Número — o que significa — é bom, normal ou ruim".
+   Compare cada nota com a meta EXCELENTE (4). Marque com ⚠ tudo que estiver abaixo de 3,0.
 
 3) O QUE OS ALUNOS ESTÃO PEDINDO
-   Agrupe os assuntos que aparecem em mais de uma avaliação (ex.: espaço, equipamentos, limpeza, ar-condicionado).
-   Para cada assunto: quantas pessoas falaram, em que horários treinam, 2 ou 3 frases reais entre aspas, e o que isso significa na prática.
-   Ordene do assunto mais citado para o menos citado.
+   Agrupe por assunto (espaço, equipamentos, limpeza, ar-condicionado, banheiro...).
+   Ordene do mais citado para o menos citado. Para cada assunto:
+   • quantas pessoas falaram e em que horários elas treinam
+   • 2 ou 3 frases reais entre aspas
+   • CUSTO ESTIMADO: barato (até R$ 300) / médio / caro — e o que resolve na prática
+   Ignore assunto citado por 1 pessoa só, a não ser que seja grave (segurança, higiene, agressão, lesão).
 
-4) EQUIPE — UM BLOCO PARA CADA PESSOA
-   Use os dados da seção EQUIPE. Para CADA funcionário avaliado, escreva:
-   • Nome e cargo
-   • Como está (nota em estrelas e quantas pessoas avaliaram)
-   • O QUE ELOGIAR NELE — frase pronta que o Wilson pode falar direto para a pessoa, citando o que os alunos disseram
-   • O QUE OBSERVAR — sinais de atenção, mesmo que pequenos
-   • O QUE PEDIR PARA MELHORAR — orientação prática e respeitosa, do jeito que um dono fala com o funcionário
-   Se alguém tiver poucas avaliações, diga que ainda são poucos dados para conclusão.
-   Se a nota geral de "Professores" nas avaliações estiver abaixo das outras, comente isso aqui e diga o que investigar com a equipe.
+4) EQUIPE — UM BLOCO CURTO PARA CADA PESSOA
+   Use SÓ a seção EQUIPE. Para CADA pessoa avaliada, no máximo 6 linhas:
+   • Nome, cargo, nota em estrelas e quantas pessoas avaliaram
+   • ELOGIE ASSIM: uma frase pronta, entre aspas, que o Wilson fala direto para a pessoa, citando o que os alunos disseram
+   • CORRIJA ASSIM: uma frase pronta, respeitosa e específica, para o que precisa mudar (se não houver nada, escreva "nada a corrigir agora")
+   • HORÁRIO: o turno e a faixa em que ela mais é avaliada. Se elogios e reclamações vierem de horários
+     diferentes, diga isso — normalmente significa que o problema é de UM turno, não da pessoa.
+     Se as avaliações dela aparecerem em horário que não bate com a escala dela, escreva
+     "vale conferir a escala desse dia" — sem acusar ninguém, pode ser troca de turno ou aluno que confundiu a pessoa.
+   Com menos de 3 avaliações, escreva "poucos dados — ainda não dá para concluir" e passe para a próxima.
+   No fim do item 4, uma linha: quem está no topo, quem precisa de conversa, e se a nota de "Professores"
+   nas avaliações da academia está acima ou abaixo das outras áreas.
 
-5) PRÊMIOS
-   Use a seção PRÊMIOS. Diga se os prêmios estão ajudando a trazer avaliações, se a meta está adequada
-   (fácil demais, difícil demais), quantos já saíram, quantos ainda não foram retirados pelos ganhadores,
-   e sugira ajustes práticos (mudar a meta, trocar o prêmio, criar outro).
-   Se não houver prêmio ativo, sugira um que faça sentido para o perfil desses alunos.
+5) HORÁRIOS DA ACADEMIA
+   Em que horários as pessoas mais avaliam e em quais a experiência piora.
+   Diga claramente se algum horário precisa de mais gente trabalhando, e qual.
 
-6) HORÁRIOS
-   Diga em quais horários as pessoas mais avaliam e em quais a experiência é pior.
-   Aponte se algum horário precisa de mais gente trabalhando ou mais atenção.
+6) PRÊMIOS
+   Máximo 6 linhas. Se a meta está fácil ou difícil demais, quantos códigos ainda não foram retirados,
+   e um ajuste concreto (número novo de meta, prêmio novo). Sem prêmio ativo, sugira UM só, com a meta em número.
 
 7) PLANO DE AÇÃO
-   Três blocos, com no máximo 5 itens cada, sempre começando pelo que é barato e rápido:
-   • FAZER ESTA SEMANA (custo baixo, resolve incômodo)
-   • FAZER ESTE MÊS
-   • PLANEJAR COM CALMA (investimento maior)
-   Para cada item diga: o que fazer, por que (citando o dado que sustenta) e quem deve tocar.
+   Três blocos, no máximo 4 itens cada, do mais barato para o mais caro:
+   • ESTA SEMANA · ESTE MÊS · PLANEJAR COM CALMA
+   Cada item em UMA linha: "O QUE fazer — POR QUE (o dado que sustenta) — QUEM faz".
 
 8) SINAIS DE ALERTA
-   Qualquer coisa que possa fazer aluno cancelar ou reclamar publicamente. Se não houver, escreva "Nada preocupante neste período".
+   Só o que pode fazer aluno cancelar ou reclamar publicamente. Se não houver: "Nada preocupante neste período."
 
 9) O QUE COMEMORAR COM A EQUIPE
-   Os pontos fortes reais, com frases dos alunos, para o Wilson usar na reunião e motivar o time.
+   No máximo 5 marcadores, cada um com uma frase real de aluno entre aspas.
+
+10) FALA PRONTA PARA A REUNIÃO
+    Um texto de 10 a 15 linhas que o Wilson possa LER EM VOZ ALTA na reunião com o time:
+    começa reconhecendo o que foi bom (com nome de quem se destacou), depois o que precisa melhorar
+    (sem expor ninguém pelo nome de forma negativa), e termina com a meta da semana.
 
 REGRAS FINAIS:
-- Não invente nada. Se um dado não existir no arquivo, escreva "não há dados suficientes sobre isso".
 - Use os textos reais dos alunos entre aspas — eles convencem mais que qualquer análise.
 - Nada de tabela complicada nem gráfico. Texto e listas simples.
 - Português do Brasil, tom direto e respeitoso.
+- Relatório inteiro entre 2 e 4 páginas. Se estiver ficando maior, corte adjetivo, não corte dado.
 
 ########## FIM DAS INSTRUÇÕES — OS DADOS COMEÇAM ABAIXO ##########
 
@@ -1909,7 +2000,7 @@ Não utilizam: ${[['arenakids','Arena Kids'],['quiosque','Quiosque'],['vestiario
 ===== REGISTROS COMPLETOS =====\n`;
 
   d.forEach((r,i)=>{
-    const dt = r.ts ? new Date(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+    const dt = dataOk(r.ts) ? dataOk(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
     txt += `AVALIAÇÃO #${r.num??i+1} (pessoa/sessão única) | ${dt} | ${r.horario||'—'} (${r.turno||'—'}) | Área: ${r.area||'—'} | Indicação: ${r.nps??'—'}/10\n`;
     txt += `   Notas: ${CATS.map(([id,n])=>n+': '+(r[id]||'—')).join(' | ')}\n`;
     COMENTS.forEach(([id,n])=>{ if(r[id] && String(r[id]).trim()) txt += `   Comentário (${n}): "${String(r[id]).trim()}"\n`; });
@@ -1923,7 +2014,8 @@ Não utilizam: ${[['arenakids','Arena Kids'],['quiosque','Quiosque'],['vestiario
   };
   if(listaProfs.length){
     txt += `\n===== EQUIPE (cada aluno dá de 1 a 5 estrelas) =====\n`;
-    txt += `Como ler: 5 e 4 estrelas = elogio · 3 ou menos = ponto de atenção.\n\n`;
+    txt += `Como ler: 5 e 4 estrelas = elogio · 3 ou menos = ponto de atenção.\n`;
+    txt += `IMPORTANTE sobre os horários desta seção: o totem fica na recepção, então a hora registrada\né a hora REAL em que o aluno estava dentro da academia quando avaliou aquela pessoa.\nServe para o dono conferir quem estava trabalhando naquele momento.\n\n`;
     listaProfs.forEach(p=>{
       const av = avalProfs().filter(a=>String(a.prof)===String(p.id) && noPeriodo(a));
       const [nome, cargo] = [nomeCargo(p.nome).n, nomeCargo(p.nome).c];
@@ -1932,15 +2024,24 @@ Não utilizam: ${[['arenakids','Arena Kids'],['quiosque','Quiosque'],['vestiario
       const bons = av.filter(a=>a.estrelas>=4).length, ruins = av.filter(a=>a.estrelas<=3).length;
       txt += `${nome}${cargo?' ('+cargo+')':''}\n`;
       txt += `   Média: ${m} de 5 estrelas · ${av.length} avaliação(ões) · ${bons} elogio(s) · ${ruins} ponto(s) de atenção\n`;
+      // horários em que essa pessoa foi avaliada (hora real do totem na recepção)
+      const cT = {}, cF = {};
+      av.forEach(a=>{ const t=turnoDe(a), f=faixaDe(a); cT[t]=(cT[t]||0)+1; cF[f]=(cF[f]||0)+1; });
+      const ordT = ['Manhã','Tarde','Noite','Madrugada'].filter(t=>cT[t]);
+      const ordF = HORARIOS.concat('Madrugada').filter(f=>cF[f]);
+      const picoF = ordF.slice().sort((x,y)=>cF[y]-cF[x])[0];
+      txt += `   Quando foi avaliado(a): ${ordT.map(t=>t+' '+cT[t]).join(' · ')}\n`;
+      txt += `   Por faixa de horário: ${ordF.map(f=>f+' '+cF[f]).join(' · ')}\n`;
+      txt += `   Horário de pico: ${picoF} (${cF[picoF]} de ${av.length})\n`;
       const elogios = av.filter(a=>a.estrelas>=4 && a.comentario);
       const criticas = av.filter(a=>a.estrelas<=3 && a.comentario);
       if(elogios.length){
         txt += `   O que os alunos elogiaram:\n`;
-        elogios.slice(-6).forEach(a=>{ txt += `      "${a.comentario}" (${a.estrelas} estrelas)\n`; });
+        elogios.slice(-6).forEach(a=>{ txt += `      "${a.comentario}" (${a.estrelas} estrelas · ${faixaDe(a)}, ${turnoDe(a)}, ${new Date(a.ts).toLocaleDateString('pt-BR')})\n`; });
       }
       if(criticas.length){
         txt += `   O que os alunos reclamaram:\n`;
-        criticas.slice(-6).forEach(a=>{ txt += `      "${a.comentario}" (${a.estrelas} estrelas)\n`; });
+        criticas.slice(-6).forEach(a=>{ txt += `      "${a.comentario}" (${a.estrelas} estrelas · ${faixaDe(a)}, ${turnoDe(a)}, ${new Date(a.ts).toLocaleDateString('pt-BR')})\n`; });
       }
       if(!elogios.length && !criticas.length) txt += `   (avaliaram só com estrelas, sem escrever nada)\n`;
       txt += `\n`;
@@ -1968,7 +2069,7 @@ Não utilizam: ${[['arenakids','Arena Kids'],['quiosque','Quiosque'],['vestiario
   const naoEntregues = codigos.filter(c=>!c.entregue).length;
   txt += `Ainda NÃO retirados pelos ganhadores: ${naoEntregues}\n`;
   codigos.slice(-10).forEach(c=>{
-    txt += `   ${c.codigo} · ${c.premio} · ${new Date(c.ts).toLocaleString('pt-BR')} · ${c.entregue?'entregue':'aguardando retirada'}\n`;
+    txt += `   ${c.codigo} · ${c.premio} · ${dataOk(c.ts)?dataOk(c.ts).toLocaleString('pt-BR'):'sem data'} · ${c.entregue?'entregue':'aguardando retirada'}\n`;
   });
 
   txt += `\n===== FIM DOS DADOS =====\n\nAGORA ESCREVA O RELATÓRIO COMPLETO CONFORME AS INSTRUÇÕES DO TOPO. NÃO PERGUNTE NADA ANTES.`;
@@ -2023,7 +2124,7 @@ function pedirSenha(){
 }
 function apagarColecaoNuvem(col){
   // marca tudo que existe localmente como excluído (não volta pela nuvem)
-  try{ JSON.parse(localStorage.getItem(chaveLocal(col))||'[]').forEach(r=>{ if(r.uid) marcarExcluido(col, r.uid); }); }catch(e){}
+  lerLista(chaveLocal(col)).forEach(r=>{ if(r.uid) marcarExcluido(col, r.uid); });
   if(!db) return;
   db.collection(col).get().then(snap=>{
     snap.forEach(doc=>{ marcarExcluido(col, doc.id); doc.ref.delete().catch(()=>{}); });
@@ -2122,7 +2223,7 @@ function salvarNuvem(col, obj){
     .then(()=>{
       try{
         const k = chaveLocal(col);
-        const l = JSON.parse(localStorage.getItem(k)||'[]');
+        const l = lerLista(k);
         const r = l.find(x=>String(x.uid)===String(obj.uid));
         if(r && r.sync!==true){ r.sync = true; localStorage.setItem(k, JSON.stringify(l)); }
       }catch(e){}
@@ -2133,7 +2234,7 @@ function sincronizarPendentes(){
   if(!db) return;
   ['avaliacoes','professores','avaliacoes_professores','premios','premios_config','auditorias'].forEach(col=>{
     try{
-      JSON.parse(localStorage.getItem(chaveLocal(col))||'[]')
+      lerLista(chaveLocal(col))
         .filter(r=>r.uid && r.sync!==true)
         .forEach(r=>salvarNuvem(col, r));
     }catch(e){}
@@ -2143,7 +2244,7 @@ function sincronizarPendentes(){
 /* LIXEIRA: guarda o que foi excluído aqui, pra nunca voltar pela nuvem
    (mesmo se a exclusão remota falhar por falta de internet). */
 const KLIXO = 'everest_excluidos';
-function lixeira(){ try{ return JSON.parse(localStorage.getItem(KLIXO)||'{}'); }catch(e){ return {}; } }
+function lixeira(){ return lerObjeto(KLIXO); }
 function marcarExcluido(col, uid){
   const lx = lixeira();
   lx[col] = (lx[col]||[]).filter(x=>String(x)!==String(uid));
@@ -2161,8 +2262,7 @@ function excluirDaNuvem(col, uid){
    Só ficam protegidos os registros ainda não enviados (sync !== true). */
 function reconciliar(col, snap){
   const k = chaveLocal(col);
-  let local = [];
-  try{ local = JSON.parse(localStorage.getItem(k)||'[]'); }catch(e){}
+  const local = lerLista(k);
   const excluidos = new Set((lixeira()[col]||[]).map(String));
   const pendentes = local.filter(r=>(!r.uid || r.sync!==true) && !excluidos.has(String(r.uid)));   // ainda não subiram: preserva
   const pendUids = new Set(pendentes.map(r=>String(r.uid)));
@@ -2303,10 +2403,14 @@ const KATIVO = 'everest_prof_ativo';
 const STAR = `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M24 4 L30.2 16.6 L44 18.6 L34 28.4 L36.4 42.2 L24 35.7 L11.6 42.2 L14 28.4 L4 18.6 L17.8 16.6 Z" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
 const AVATAR = `<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" xmlns="http://www.w3.org/2000/svg" style="background:linear-gradient(135deg,var(--roxo),var(--roxo-forte));border-radius:50%"><circle cx="24" cy="17" r="7.5"/><path d="M9 41 c2-9 8-13 15-13 s13 4 15 13"/></svg>`;
 
-function profs(){ try{ return JSON.parse(localStorage.getItem(KPROF)||'[]'); }catch(e){ return []; } }
+function profs(){ return lerLista(KPROF).filter(p=>p && p.id!=null); }
 /* "Alysson - Professor" vira nome + cargo automaticamente */
 function nomeCargo(s){ const i=(s||'').indexOf(' - '); return i>0 ? {n:s.slice(0,i), c:s.slice(i+3)} : {n:s||'', c:''}; }
-function avalProfs(){ try{ return JSON.parse(localStorage.getItem(KAPROF)||'[]'); }catch(e){ return []; } }
+function avalProfs(){
+  /* descarta registro sem nota ou sem data: era o que gerava NaN e 'Invalid Date' */
+  return lerLista(KAPROF).filter(a => a.prof!=null && Number(a.estrelas)>=1 && Number(a.estrelas)<=5 && dataOk(a.ts))
+    .map(a => Object.assign({}, a, {estrelas: Number(a.estrelas)}));
+}
 function profAtivo(){ return localStorage.getItem(KATIVO)==='1'; }
 
 /* ---- fluxo público (totem) ---- */
@@ -2361,8 +2465,10 @@ function enviarProf(){
   profEnviando = true;
   try{
     const lista = avalProfs();
-    const reg = { num:lista.length+1, ts:new Date().toISOString(), prof:profSel.id, nome:profSel.nome,
+    const agora = new Date().toISOString();
+    const reg = { num:lista.length+1, ts:agora, prof:profSel.id, nome:profSel.nome,
       estrelas:profEstrelas, comentario:(document.getElementById('txt_prof')?.value||'').trim(),
+      faixa: faixaDaHora(agora), turno: turnoDaHora(agora),   // hora real da avaliação
       uid:novoUid(), sync:false };
     lista.push(reg);
     localStorage.setItem(KAPROF, JSON.stringify(lista));
@@ -2524,6 +2630,11 @@ function desenharProfsAdmin(){
     const resumo = x.av.length ? `<span class="pnovas" style="margin:5px 0 0;display:flex">
         ${nEl?`<span class="ne">💚 ${nEl} elogio${nEl>1?'s':''}</span>`:''}
         ${nCr?`<span class="nc">🔴 ${nCr} crítica${nCr>1?'s':''}</span>`:''}
+        ${(()=>{
+          const c={}; x.av.forEach(a=>{const t=turnoDe(a); c[t]=(c[t]||0)+1;});
+          const t = Object.keys(c).sort((p,q)=>c[q]-c[p])[0];
+          return t ? `<span style="background:rgba(255,255,255,.07);color:${CORTURNO[t]||'var(--muted)'};border-radius:99px;padding:2px 10px;font-size:11px;font-weight:900">mais avaliado de ${t.toLowerCase()}</span>` : '';
+        })()}
       </span>` : '';
     const ultimo = x.av.filter(a=>a.comentario).slice(-1).map(a=>
       `<p style="margin:7px 0 0"><span style="color:var(--dourado)">${'★'.repeat(a.estrelas)}</span> “${escHtml(a.comentario)}”</p>
@@ -2563,10 +2674,60 @@ function abrirPerfilProf(id){
 
   const item = (a, tipo) => `
     <div class="${tipo==='critica'?'reclama':'elogio'}">
-      <div class="meta">${new Date(a.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})}
+      <div class="meta">${new Date(a.ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})}
+        &nbsp;·&nbsp; <b style="color:${CORTURNO[turnoDe(a)]||'var(--muted)'}">${horaCurta(a.ts)} · ${turnoDe(a)}</b>
         &nbsp;·&nbsp; <span style="color:var(--dourado)">${'★'.repeat(a.estrelas)}${'☆'.repeat(5-a.estrelas)}</span> (${a.estrelas}/5)</div>
       ${a.comentario ? `<p>“${escHtml(a.comentario)}”</p>` : `<p style="color:var(--muted)">Sem comentário — só a nota.</p>`}
     </div>`;
+
+  /* QUANDO essa pessoa é avaliada — a hora do totem é a hora real em que
+     o aluno estava na academia (o totem fica na recepção). */
+  const blocoHorarios = (() => {
+    if(!av.length) return '';
+    const ordemT = ['Manhã','Tarde','Noite','Madrugada'];
+    const cT = {}, cF = {};
+    av.forEach(a=>{ const t=turnoDe(a), f=faixaDe(a); cT[t]=(cT[t]||0)+1; cF[f]=(cF[f]||0)+1; });
+    const maxT = Math.max(...Object.values(cT));
+    const faixasOrd = HORARIOS.concat('Madrugada').filter(f=>cF[f]);
+    const maxF = Math.max(...Object.values(cF));
+    const picoF = faixasOrd.find(f=>cF[f]===maxF);
+    const picoT = picoF==='Madrugada' ? 'Madrugada' : TURNO(picoF);   // turno DA faixa de pico
+
+    const barrasT = ordemT.filter(t=>cT[t]).map(t=>{
+      const pct = Math.round(cT[t]/av.length*100);
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:900;margin-bottom:4px">
+          <span style="color:${CORTURNO[t]}">${t}</span>
+          <span style="color:var(--muted)">${cT[t]} ${cT[t]===1?'avaliação':'avaliações'} · ${pct}%</span>
+        </div>
+        <div style="height:12px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden">
+          <div style="height:100%;width:${Math.round(cT[t]/maxT*100)}%;border-radius:99px;background:${CORTURNO[t]}"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const chipsF = faixasOrd.map(f=>{
+      const pico = f===picoF;
+      const t = f==='Madrugada' ? 'Madrugada' : TURNO(f);
+      return `<span style="padding:7px 13px;border-radius:99px;font-size:13px;font-weight:900;
+        background:${pico?'rgba(255,200,97,.18)':'rgba(255,255,255,.06)'};
+        color:${pico?'var(--dourado)':'var(--muted)'};
+        border:1px solid ${pico?'var(--dourado)':'transparent'}"
+        title="${t}">${f} · ${cF[f]}</span>`;
+    }).join('');
+
+    return `
+    <div class="bloco"><h3 style="color:var(--dourado)">Quando essa pessoa é avaliada</h3>
+      <p class="vazio" style="padding:0 0 14px">Hora em que o aluno usou o totem na recepção — serve pra conferir quem estava trabalhando naquele momento.</p>
+      <div style="background:rgba(255,200,97,.10);border:1px solid rgba(255,200,97,.35);border-radius:14px;padding:14px 16px;margin-bottom:16px">
+        <div style="font-size:12px;font-weight:900;letter-spacing:2px;color:var(--muted)">HORÁRIO DE PICO</div>
+        <div style="font-family:var(--fTitulo);font-style:italic;font-size:26px;color:var(--dourado);letter-spacing:1px;margin-top:2px">${picoF} <span style="font-size:16px;opacity:.75">· ${picoT}</span></div>
+        <div style="font-size:13px;color:var(--muted);font-weight:700">${maxF} de ${av.length} ${av.length===1?'avaliação':'avaliações'} vieram nessa faixa</div>
+      </div>
+      ${barrasT}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">${chipsF}</div>
+    </div>`;
+  })();
 
   ppFotoPendente = null;
   document.getElementById('ppTitulo').textContent = 'PERFIL · '+nomeCargo(p.nome).n.toUpperCase();
@@ -2596,6 +2757,7 @@ function abrirPerfilProf(id){
       </div>
       <p class="vazio" id="ppFotoStatus" style="padding:8px 0 0">Se não escolher foto nova, a atual continua.</p>
     </div>
+    ${blocoHorarios}
     <div class="bloco"><h3 style="color:var(--bom)">Elogios (4 e 5 estrelas) — ${elogios.length}</h3>
       ${elogios.length ? elogios.map(a=>item(a,'elogio')).join('') : '<div class="vazio">Nenhum elogio ainda.</div>'}
     </div>
@@ -2634,6 +2796,205 @@ function salvarEdicaoProf(id){
 }
 function fecharPerfilProf(){ document.getElementById('perfilProf').classList.remove('on'); desenharProfsAdmin(); }
 
+/* ===================== PANORAMA DA EQUIPE =====================
+   Uma tela só com TUDO de TODO MUNDO: nota, horários e cada
+   comentário que os alunos escreveram, separado por pessoa. */
+let panPeriodo = 'mes';   // 'mes' | 'tri' | 'tudo'
+function abrirPanorama(){ desenharPanorama(); document.getElementById('panoramaEquipe').classList.add('on'); }
+function fecharPanorama(){ document.getElementById('panoramaEquipe').classList.remove('on'); desenharProfsAdmin(); }
+function panMudarPeriodo(p){ panPeriodo = p; desenharPanorama(); }
+
+function panFiltro(){
+  if(panPeriodo === 'tudo') return { ok: ()=>true, rotulo: 'Desde o início' };
+  const hoje = new Date();
+  if(panPeriodo === 'mes'){
+    const mes = hoje.toISOString().slice(0,7);
+    const nome = hoje.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    return { ok: a => a.ts && a.ts.slice(0,7) === mes, rotulo: nome.charAt(0).toUpperCase()+nome.slice(1) };
+  }
+  const corte = new Date(hoje.getFullYear(), hoje.getMonth()-2, 1).toISOString();
+  return { ok: a => a.ts && a.ts >= corte, rotulo: 'Últimos 3 meses' };
+}
+
+function desenharPanorama(){
+  const lista = profs();
+  const f = panFiltro();
+  const todas = avalProfs().filter(f.ok);
+  const alvo = document.getElementById('panCorpo');
+
+  const btnP = (id, txt) => `<button onclick="panMudarPeriodo('${id}')" style="
+    padding:11px 20px;border-radius:12px;cursor:pointer;font-weight:900;font-size:13px;letter-spacing:1px;
+    border:1px solid ${panPeriodo===id?'var(--dourado)':'var(--linha)'};
+    background:${panPeriodo===id?'rgba(255,201,60,.16)':'rgba(255,255,255,.04)'};
+    color:${panPeriodo===id?'var(--dourado)':'var(--muted)'}">${txt}</button>`;
+  const barraPeriodo = `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
+    ${btnP('mes','ESTE MÊS')}${btnP('tri','ÚLTIMOS 3 MESES')}${btnP('tudo','DESDE O INÍCIO')}
+    <button onclick="window.print()" style="padding:11px 20px;border-radius:12px;cursor:pointer;font-weight:900;font-size:13px;letter-spacing:1px;border:1px solid var(--linha);background:rgba(255,255,255,.04);color:var(--muted);margin-left:auto">🖨 IMPRIMIR</button>
+  </div>`;
+
+  if(!lista.length){
+    alvo.innerHTML = barraPeriodo + `<div class="bloco"><div class="vazio">Nenhuma pessoa cadastrada na equipe ainda.</div></div>`;
+    return;
+  }
+
+  /* dados por pessoa */
+  const linhas = lista.map(p=>{
+    const av = todas.filter(a=>String(a.prof)===String(p.id)).slice().reverse();
+    const media = av.length ? av.reduce((x,a)=>x+a.estrelas,0)/av.length : 0;
+    const el = av.filter(a=>a.estrelas>=4), cr = av.filter(a=>a.estrelas<=3);
+    const cT = {}; av.forEach(a=>{ const t=turnoDe(a); cT[t]=(cT[t]||0)+1; });
+    const picoT = Object.keys(cT).sort((x,y)=>cT[y]-cT[x])[0] || null;
+    const cF = {}; av.forEach(a=>{ const x=faixaDe(a); cF[x]=(cF[x]||0)+1; });
+    const picoF = Object.keys(cF).sort((x,y)=>cF[y]-cF[x])[0] || null;
+    return { p, av, media, el, cr, cT, picoT, cF, picoF };
+  }).sort((a,b)=> b.media-a.media || b.av.length-a.av.length);
+
+  const comAv = linhas.filter(x=>x.av.length);
+  const semAv = linhas.filter(x=>!x.av.length);
+  const totalAv = todas.length;
+  const mediaEquipe = totalAv ? (todas.reduce((x,a)=>x+a.estrelas,0)/totalAv) : 0;
+  const totEl = todas.filter(a=>a.estrelas>=4).length;
+  const totCr = todas.filter(a=>a.estrelas<=3).length;
+  const cTg = {}; todas.forEach(a=>{ const t=turnoDe(a); cTg[t]=(cTg[t]||0)+1; });
+  const picoGeral = Object.keys(cTg).sort((x,y)=>cTg[y]-cTg[x])[0];
+
+  /* ------- topo: os números que o dono olha primeiro ------- */
+  const kpi = (rot, val, sub, cor) => `<div style="flex:1 1 150px;background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px 18px">
+    <div style="font-size:11px;font-weight:900;letter-spacing:2px;color:var(--muted)">${rot}</div>
+    <div style="font-family:var(--fTitulo);font-style:italic;font-size:34px;letter-spacing:1px;color:${cor};line-height:1.1;margin-top:2px">${val}</div>
+    <div style="font-size:12px;color:var(--muted);font-weight:700">${sub}</div>
+  </div>`;
+
+  const topo = `
+  <div class="bloco" style="background:linear-gradient(135deg,rgba(107,74,255,.14),rgba(255,201,60,.08));border-color:rgba(255,201,60,.28)">
+    <h3 style="margin-bottom:6px">Resumo · ${f.rotulo}</h3>
+    <p class="vazio" style="padding:0 0 16px">${totalAv ? `${totalAv} ${totalAv===1?'aluno avaliou':'alunos avaliaram'} a equipe neste período.` : 'Nenhuma avaliação da equipe neste período.'}</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      ${kpi('MÉDIA DA EQUIPE', totalAv? mediaEquipe.toFixed(2) : '—', totalAv? 'de 5 estrelas' : 'sem dados', totalAv? (mediaEquipe>=4?'var(--bom)':mediaEquipe>=3?'var(--dourado)':'var(--ruim)') : 'var(--muted)')}
+      ${kpi('ELOGIOS', totEl, '4 e 5 estrelas', 'var(--bom)')}
+      ${kpi('PONTOS DE ATENÇÃO', totCr, '3 estrelas ou menos', totCr? 'var(--ruim)':'var(--muted)')}
+      ${kpi('AVALIAM MAIS', picoGeral || '—', picoGeral? `${cTg[picoGeral]} de ${totalAv}` : 'sem dados', 'var(--dourado)')}
+      ${kpi('PESSOAS', lista.length, `${comAv.length} com avaliação`, '#fff')}
+    </div>
+  </div>`;
+
+  /* ------- o que exige ação agora ------- */
+  const atencao = comAv.filter(x=>x.media < 3.5 || x.cr.length);
+  const blocoAtencao = atencao.length ? `
+  <div class="bloco" style="border-color:rgba(255,84,112,.35)">
+    <h3 style="color:var(--ruim)">Precisa de conversa</h3>
+    ${atencao.map(x=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px dashed rgba(255,255,255,.07)">
+      ${x.p.foto?`<img src="${x.p.foto}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex:none" alt="">`:`<span style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.08);flex:none;display:block"></span>`}
+      <div style="flex:1;min-width:0">
+        <b style="font-size:15px">${escHtml(nomeCargo(x.p.nome).n)}</b>
+        <div style="font-size:12px;color:var(--muted);font-weight:700">${x.media.toFixed(2)} de 5 · ${x.cr.length} ${x.cr.length===1?'pessoa reclamou':'pessoas reclamaram'}${x.picoT?` · mais avaliado de ${x.picoT.toLowerCase()}`:''}</div>
+      </div>
+      <button class="btn-arq" style="padding:8px 14px;font-size:12px" onclick="fecharPanorama();abrirPerfilProf('${x.p.id}')">Abrir</button>
+    </div>`).join('')}
+  </div>` : (totalAv ? `<div class="bloco" style="border-color:rgba(76,217,123,.3)">
+    <h3 style="color:var(--bom)">Precisa de conversa</h3>
+    <div class="vazio">Ninguém abaixo de 3,5 estrelas e nenhuma reclamação neste período. Time indo bem.</div>
+  </div>` : '');
+
+  /* ------- pódio ------- */
+  const podio = comAv.length ? `
+  <div class="bloco">
+    <h3>Destaques do período</h3>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      ${comAv.slice(0,3).map((x,i)=>`
+      <div style="flex:1 1 200px;background:rgba(255,255,255,.04);border:1px solid ${i===0?'var(--dourado)':'rgba(255,255,255,.08)'};border-radius:16px;padding:16px;text-align:center">
+        <div style="font-size:22px">${['🥇','🥈','🥉'][i]}</div>
+        ${x.p.foto?`<img src="${x.p.foto}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:3px solid ${i===0?'var(--dourado)':'rgba(255,255,255,.15)'};margin:6px 0" alt="">`:''}
+        <div style="font-weight:900;font-size:15px">${escHtml(nomeCargo(x.p.nome).n)}</div>
+        <div style="color:var(--dourado);font-size:14px">${'★'.repeat(Math.round(x.media))}${'☆'.repeat(5-Math.round(x.media))}</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:700">${x.media.toFixed(2)} · ${x.av.length} ${x.av.length===1?'avaliação':'avaliações'}</div>
+      </div>`).join('')}
+    </div>
+  </div>` : '';
+
+  /* ------- um cartão completo por pessoa ------- */
+  const comentario = (a, tipo) => `
+    <div style="border-left:3px solid ${tipo==='el'?'var(--bom)':'var(--ruim)'};background:${tipo==='el'?'rgba(76,217,123,.06)':'rgba(255,84,112,.06)'};border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--muted);font-weight:800;letter-spacing:.4px;margin-bottom:4px">
+        ${new Date(a.ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})}
+        · <span style="color:${CORTURNO[turnoDe(a)]||'var(--muted)'}">${horaCurta(a.ts)} ${turnoDe(a)}</span>
+        · <span style="color:var(--dourado)">${'★'.repeat(a.estrelas)}${'☆'.repeat(5-a.estrelas)}</span>
+      </div>
+      <div style="font-size:14px;line-height:1.5;font-weight:600">“${escHtml(a.comentario)}”</div>
+    </div>`;
+
+  const cartaoPessoa = x => {
+    const {p, av, media, el, cr} = x;
+    const elC = el.filter(a=>a.comentario && a.comentario.trim());
+    const crC = cr.filter(a=>a.comentario && a.comentario.trim());
+    const semTexto = av.length - elC.length - crC.length;
+    const dist = [5,4,3,2,1].map(n=>{
+      const q = av.filter(a=>a.estrelas===n).length;
+      const pct = av.length ? Math.round(q/av.length*100) : 0;
+      return `<div style="display:grid;grid-template-columns:44px 1fr 46px;align-items:center;gap:8px;margin-bottom:5px;font-size:12px;font-weight:800">
+        <span style="color:var(--dourado)">${n}★</span>
+        <span style="height:9px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;display:block">
+          <i style="display:block;height:100%;width:${pct}%;background:${n>=4?'var(--bom)':n===3?'var(--regular)':'var(--ruim)'}"></i></span>
+        <span style="color:var(--muted);text-align:right">${q}</span>
+      </div>`;
+    }).join('');
+    const turnos = Object.keys(x.cT).sort((a,b)=>x.cT[b]-x.cT[a]).map(t=>
+      `<span style="padding:5px 11px;border-radius:99px;font-size:11px;font-weight:900;background:rgba(255,255,255,.06);color:${CORTURNO[t]||'var(--muted)'}">${t} ${x.cT[t]}</span>`).join('');
+
+    const corMedia = media>=4?'var(--bom)':media>=3?'var(--dourado)':'var(--ruim)';
+    return `
+    <div class="bloco" style="border-left:4px solid ${corMedia}">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px">
+        ${p.foto?`<img src="${p.foto}" style="width:74px;height:74px;border-radius:50%;object-fit:cover;border:3px solid ${corMedia}" alt="">`:`<span style="width:74px;height:74px;border-radius:50%;background:rgba(255,255,255,.08);display:block;flex:none"></span>`}
+        <div style="flex:1;min-width:180px">
+          <b style="font-family:var(--fTitulo);font-style:italic;font-size:24px;letter-spacing:1px">${escHtml(nomeCargo(p.nome).n)}</b>
+          ${nomeCargo(p.nome).c?`<div style="color:var(--dourado);font-weight:900;font-style:italic;font-size:12px;letter-spacing:2px;text-transform:uppercase">${escHtml(nomeCargo(p.nome).c)}</div>`:''}
+          <div style="color:var(--dourado);font-size:17px;margin-top:4px">${'★'.repeat(Math.round(media))}${'☆'.repeat(5-Math.round(media))}
+            <span style="color:${corMedia};font-weight:900;font-size:15px">${media.toFixed(2)}</span>
+            <span style="color:var(--muted);font-size:13px;font-weight:700">· ${av.length} ${av.length===1?'avaliação':'avaliações'}</span></div>
+        </div>
+        <button class="btn-arq" style="padding:9px 16px;font-size:12px" onclick="fecharPanorama();abrirPerfilProf('${p.id}')">Perfil completo</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px">
+        <div>
+          <div style="font-size:11px;font-weight:900;letter-spacing:2px;color:var(--muted);margin-bottom:8px">COMO FOI AVALIADO</div>
+          ${dist}
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:900;letter-spacing:2px;color:var(--muted);margin-bottom:8px">QUANDO FOI AVALIADO</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${turnos}</div>
+          ${x.picoF?`<div style="font-size:13px;font-weight:800"><span style="color:var(--muted)">Pico:</span> <span style="color:var(--dourado)">${x.picoF}</span> <span style="color:var(--muted)">(${x.cF[x.picoF]} de ${av.length})</span></div>`:''}
+        </div>
+      </div>
+
+      <div style="margin-top:18px">
+        <div style="font-size:12px;font-weight:900;letter-spacing:2px;color:var(--bom);margin-bottom:8px">ELOGIOS ESCRITOS (${elC.length})</div>
+        ${elC.length ? elC.map(a=>comentario(a,'el')).join('') : '<div class="vazio" style="padding:0 0 10px">Nenhum elogio escrito neste período.</div>'}
+        <div style="font-size:12px;font-weight:900;letter-spacing:2px;color:var(--ruim);margin:14px 0 8px">RECLAMAÇÕES ESCRITAS (${crC.length})</div>
+        ${crC.length ? crC.map(a=>comentario(a,'cr')).join('') : '<div class="vazio" style="padding:0 0 10px">Nenhuma reclamação escrita neste período.</div>'}
+        ${semTexto>0?`<div class="vazio" style="padding:4px 0 0;font-size:13px">+ ${semTexto} ${semTexto===1?'pessoa avaliou':'pessoas avaliaram'} só com estrelas, sem escrever nada.</div>`:''}
+      </div>
+    </div>`;
+  };
+
+  const semDados = semAv.length ? `
+  <div class="bloco">
+    <h3 style="color:var(--muted)">Sem avaliação neste período (${semAv.length})</h3>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      ${semAv.map(x=>`<span style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border-radius:99px;padding:6px 14px 6px 6px">
+        ${x.p.foto?`<img src="${x.p.foto}" style="width:30px;height:30px;border-radius:50%;object-fit:cover" alt="">`:`<span style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.08);display:block"></span>`}
+        <b style="font-size:13px">${escHtml(nomeCargo(x.p.nome).n)}</b></span>`).join('')}
+    </div>
+    <p class="vazio" style="padding:12px 0 0">Pode ser folga, entrada recente ou pouca exposição no balcão. Não significa avaliação ruim.</p>
+  </div>` : '';
+
+  alvo.innerHTML = barraPeriodo + topo + blocoAtencao + podio
+    + (comAv.length ? `<div class="bloco" style="background:none;border:none;padding:0;margin-bottom:8px"><h3 style="margin:0">Pessoa por pessoa · da melhor nota para a menor</h3></div>` + comAv.map(cartaoPessoa).join('') : '')
+    + semDados;
+  alvo.scrollTop = 0;
+}
+
 /* ================= PRÊMIOS =================
    - Vários prêmios contam AO MESMO TEMPO, cada um com sua meta.
    - SÓ UM prêmio por pessoa: se dois baterem a meta juntos, o segundo
@@ -2646,10 +3007,10 @@ const KMIGROU = 'everest_premio_migrado';// controle interno (não sincroniza)
 let rolFotoPendente = null, emPremio = false, edFotoPendente = null;
 let editandoUid = null, novoRepete = true;
 
-function roleta(){ try{ return JSON.parse(localStorage.getItem(KROLETA)||'{}'); }catch(e){ return {}; } }
+function roleta(){ return lerObjeto(KROLETA); }
 function salvarRoletaLocal(r){ localStorage.setItem(KROLETA, JSON.stringify(r)); }
-function premios(){ try{ return JSON.parse(localStorage.getItem(KPREMIOS)||'[]'); }catch(e){ return []; } }
-function premiosLista(){ try{ return JSON.parse(localStorage.getItem(KPLISTA)||'[]'); }catch(e){ return []; } }
+function premios(){ return lerLista(KPREMIOS); }
+function premiosLista(){ return lerLista(KPLISTA); }
 function salvarListaLocal(l){ localStorage.setItem(KPLISTA, JSON.stringify(l)); }
 function pushRoleta(){ if(db) db.collection('config').doc('geral').set({roleta: roleta()}, {merge:true}).catch(()=>{}); }
 
@@ -2946,7 +3307,9 @@ function editarPremioItem(uid){
   if(p.ganhou){ alert('Esse prêmio já teve ganhador e está bloqueado. Use "Repetir este prêmio" para criar uma nova rodada.'); return; }
   editandoUid = uid; edFotoPendente = null;
   desenharRoletaAdmin();
-  setTimeout(()=>{ const el = document.getElementById('edNome'); if(el){ el.scrollIntoView({behavior:'smooth', block:'center'}); el.focus(); } }, 100);
+  setTimeout(()=>{ const el = document.getElementById('edNome'); if(!el) return;
+    try{ el.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){}
+    try{ el.focus(); }catch(e){} }, 100);
 }
 function cancelarEdicaoPremio(){ editandoUid = null; edFotoPendente = null; desenharRoletaAdmin(); }
 function salvarEdicaoPremio(){
@@ -3027,13 +3390,13 @@ function desenharAuditoria(){
     <div class="premio-linha" style="margin-bottom:8px">
       <b class="cod" style="min-width:150px">${fmtD(a.de)} a ${fmtD(a.ate10)}</b>
       <div class="flex1"><b>${a.qtd} avaliação(ões) analisada(s)</b><br>
-        <small>gerada em ${new Date(a.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})}</small></div>
+        <small>gerada em ${dataOk(a.ts)?dataOk(a.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</small></div>
     </div>`).join('') : '<div class="vazio">Nenhuma auditoria feita ainda.</div>';
 }
 
 /* ================= ALERTAS DE NOVIDADES ================= */
 const KV_C = 'everest_visto_criticas', KV_E = 'everest_visto_elogios', KV_P = 'everest_visto_profs';
-function vistoProfs(){ try{ return JSON.parse(localStorage.getItem(KV_P)||'{}'); }catch(e){ return {}; } }
+function vistoProfs(){ return lerObjeto(KV_P); }
 function desenharBadges(){
   const todos = dados();
   const vc = localStorage.getItem(KV_C)||'';

@@ -375,6 +375,24 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 .elogio.aten{border-left-color:var(--dourado);background:rgba(255,201,60,.05)}
 .estrela-row .st{color:var(--dourado);letter-spacing:2px;font-size:16px}
 .vazio{color:var(--muted);font-size:15px;padding:10px 0;font-weight:600}
+/* Com o cartão aberto, a tabela de respostas já mostra todas as notas.
+   Some com a linha de contexto para a mesma informação não aparecer duas vezes. */
+.reclama.aberto .ctx-notas, .elogio.aberto .ctx-notas{display:none}
+/* selo que diz, em cada comentário, se aquele ponto foi elogio ou reclamação */
+.selo-lado{font-size:10px;font-weight:900;letter-spacing:1.2px;padding:3px 9px;border-radius:99px;
+  margin-left:8px;vertical-align:middle;text-transform:uppercase;white-space:nowrap}
+.selo-lado.el{background:rgba(76,217,123,.16);color:var(--bom)}
+.selo-lado.cr{background:rgba(255,84,112,.16);color:var(--ruim)}
+/* turno em destaque: é o que o dono bate o olho e já entende */
+.tsel{font-family:var(--fTitulo);font-style:italic;font-size:15px;letter-spacing:2px;
+  padding:6px 16px;border-radius:9px;white-space:nowrap;border:1px solid currentColor}
+.tsel.manha{color:#ffc861;background:rgba(255,200,97,.13)}
+.tsel.tarde{color:#ff9d5c;background:rgba(255,157,92,.13)}
+.tsel.noite{color:#8b7cff;background:rgba(139,124,255,.15)}
+.tsel.sem  {color:var(--muted);background:rgba(255,255,255,.06)}
+/* motivo curto, só quando a pessoa não escreveu nada */
+.motivo{font-size:13.5px;font-weight:700;color:var(--muted);padding:4px 0 2px}
+.motivo b{color:var(--texto);font-weight:900}
 
 /* IMPRESSÃO — o Panorama vira um relatório de papel legível.
    Fundo branco, texto preto, sem botões e sem quebrar cartão no meio da folha. */
@@ -694,8 +712,10 @@ body.teclado .voltar{padding:6px 12px;font-size:11px}
       <button data-t="auditoria" onclick="setAba('auditoria')">Auditoria IA<span class="tag-nova ouro" id="badgeAudit" hidden></span></button>
     </div>
     <div id="tab-geral" class="tab on">
+      <div id="avisoQueda"></div>
       <div class="kpis" id="kpis"></div>
       <div class="bloco"><h3>Este mês x mês passado <small style="color:var(--muted);font-weight:600">(sempre o total do mês, sem filtros)</small></h3><div id="compMes"></div></div>
+      <div class="bloco"><h3>O que subiu e o que caiu <small style="color:var(--muted);font-weight:600">(últimos 30 dias x os 30 dias anteriores)</small></h3><div id="compCategorias"></div></div>
       <div class="bloco"><h3>Média por categoria <small style="color:var(--muted);font-weight:600">(1 = Ruim · 4 = Excelente)</small></h3><div id="medias"></div></div>
       <div class="bloco"><h3>Quando o pessoal mais avalia <small style="color:var(--muted);font-weight:600">(volume por turno)</small></h3><div id="volTurno"></div></div>
       <div class="bloco"><h3>Avaliações por horário <small style="color:var(--muted);font-weight:600">(nota da experiência geral)</small></h3><div id="porHorario"></div></div>
@@ -747,6 +767,15 @@ body.teclado .voltar{padding:6px 12px;font-size:11px}
           </div>
         </div>
         <p class="vazio" id="profFotoStatus" style="padding:8px 0 0">Sem foto escolhida — a foto é ajustada automaticamente pro tamanho padrão.</p>
+      </div>
+      <div class="bloco" style="background:linear-gradient(135deg,rgba(107,74,255,.16),rgba(255,201,60,.08));border-color:rgba(255,201,60,.35)">
+        <h3 style="margin-bottom:8px">Card do destaque do mês</h3>
+        <p class="vazio" style="padding:0 0 14px">Gera uma folha pronta, em tamanho A4, com a foto e a nota de quem ficou em primeiro. Feita para imprimir e colar no mural — e também dá para mandar no grupo da equipe.</p>
+        <div id="cardDestaquePrevia"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn-arq ouro2" style="font-size:15px;padding:14px 26px" onclick="baixarCardDestaque()">★ GERAR FOLHA DO DESTAQUE</button>
+          <span id="cardDestaqueStatus" style="font-size:13px;color:var(--muted);font-weight:700"></span>
+        </div>
       </div>
       <div class="bloco" style="background:linear-gradient(135deg,rgba(255,201,60,.12),rgba(107,74,255,.10));border-color:rgba(255,201,60,.35)">
         <h3 style="margin-bottom:8px">Ver tudo da equipe de uma vez</h3>
@@ -881,6 +910,25 @@ const FIREBASE_CONFIG = {
   storageBucket: "totem-everest.firebasestorage.app",
   messagingSenderId: "905492214266",
   appId: "1:905492214266:web:602edba7a94ada89b63443"
+};
+
+/* ============================================================
+   MARCA DO CLIENTE — troque só este bloco ao instalar o totem
+   em outra empresa. Nada aqui é específico de academia.
+   ============================================================ */
+const MARCA = {
+  nome:      'EVEREST ACADEMIA',   // aparece no card e nos títulos gerados
+  slogan:    'SUA OPINIÃO NOS LEVA AO TOPO',
+  publico:   'alunos',             // 'clientes', 'pacientes', 'hóspedes'...
+  publico1:  'aluno',              // o mesmo, no singular
+  elogio:    'Obrigado por fazer a diferença todos os dias.',  // frase fixa do card — neutra, serve para qualquer pessoa
+  reconhecimento: 'MELHOR AVALIAÇÃO DA EQUIPE NO MÊS',
+  // cores do card (o resto do visual sai do CSS lá em cima)
+  corDestaque: '#FFC93C',
+  corFundoTopo:'#241A4D',
+  corFundoMeio:'#171130',
+  corFundoBaixo:'#0D0A1C',
+  corFaixa:    'rgba(107,74,255,.30)'
 };
 
 /* ================= CONFIG ================= */
@@ -1610,6 +1658,8 @@ function desenharPainel(){
 
   // ===== comparativo com o mês passado =====
   desenharComparativo();
+  desenharAvisoQueda();
+  desenharCompCategorias();
 
   // médias
   document.getElementById('medias').innerHTML = CATS.map(([id,nome])=>{
@@ -1708,12 +1758,18 @@ function desenharPainel(){
 /* Cada pessoa que escreveu vira um depoimento. Mais humano e sem confusão:
    uma caixa = uma pessoa, com tudo que ELA escreveu daquele lado. */
 const verTodosComents = {critica:false, elogio:false};
+/* MODO "SÓ OS COMENTÁRIOS"
+   A pessoa entra na lista se escreveu ao menos uma coisa do lado desta aba.
+   Mas, uma vez dentro, mostramos TUDO que ela escreveu — não faz sentido
+   ler meio depoimento. Cada comentário leva um selo dizendo de que lado é. */
 function comentariosAgrupados(lista, tipo){
   const todas = lista.map(r=>{
-    const falas = COMENTS
-      .filter(([id])=>r[id] && String(r[id]).trim() && ladoComentario(r,id)===tipo)
-      .map(([id,nome])=>({nome, txt:String(r[id]).trim(), ctx:notasDoGrupo(r,id)}));
-    return falas.length ? {r, falas} : null;
+    const escritos = COMENTS.filter(([id])=>r[id] && String(r[id]).trim());
+    if(!escritos.some(([id])=>ladoComentario(r,id)===tipo)) return null;   // nada desta aba
+    const falas = escritos.map(([id,nome])=>({
+      nome, txt:String(r[id]).trim(), ctx:notasDoGrupo(r,id), lado:ladoComentario(r,id)
+    }));
+    return {r, falas};
   }).filter(Boolean);
 
   if(!todas.length) return `<div class="vazio">Ninguém escreveu nada ${tipo==='critica'?'nas críticas':'nos elogios'}${filtroAtual!=='TODOS'?' nesse filtro':''}.</div>`;
@@ -1721,21 +1777,146 @@ function comentariosAgrupados(lista, tipo){
   // mostra as 30 mais recentes; o resto entra ao tocar em "ver mais"
   const LIMITE = 30;
   const mostrar = verTodosComents[tipo] ? todas : todas.slice(0, LIMITE);
-  const totalFalas = todas.reduce((s,p)=>s+p.falas.length,0);
-  const cabec = `<div class="vazio" style="padding:0 0 16px">${todas.length===1?'1 pessoa escreveu':todas.length+' pessoas escreveram'} · ${totalFalas} comentário${totalFalas>1?'s':''} no total${mostrar.length<todas.length?` · mostrando as ${LIMITE} mais recentes`:''}</div>`;
+  const doLado = todas.reduce((s,p)=>s+p.falas.filter(f=>f.lado===tipo).length,0);
+  const outros = todas.reduce((s,p)=>s+p.falas.filter(f=>f.lado!==tipo).length,0);
+  const cabec = `<div class="vazio" style="padding:0 0 6px">${todas.length===1?'1 pessoa escreveu':todas.length+' pessoas escreveram'} ${doLado} ${doLado===1?'comentário':'comentários'} ${tipo==='critica'?'de reclamação':'de elogio'}${mostrar.length<todas.length?` · mostrando as ${LIMITE} mais recentes`:''}</div>
+    ${outros?`<div class="vazio" style="padding:0 0 16px;font-size:13px">Junto de cada uma, aparece também o resto do que essa mesma pessoa escreveu (${outros} ${outros===1?'comentário':'comentários'}), para você ler o depoimento inteiro.</div>`:'<div style="height:10px"></div>'}`;
   const rodape = mostrar.length < todas.length
-    ? `<div style="text-align:center;margin-top:6px"><button class="btn-arq" onclick="verTodosComents['${tipo}']=true;desenharPainel()">VER OS ${todas.length-LIMITE} RESTANTES</button></div>` : '';
+    ? `<div style="text-align:center;margin-top:6px"><button class="btn-arq" onclick="verTodosComents['${tipo}']=true;desenharPainel()">VER AS ${todas.length-LIMITE} RESTANTES</button></div>` : '';
 
   return cabec + mostrar.map(({r,falas})=>`
     <div class="depo ${tipo==='critica'?'neg':'pos'}">
       <div class="depo-topo">
         <span class="depo-num">AVALIAÇÃO #${r.num??'?'}</span>
-        <span class="depo-meta">${dataOk(r.ts)?dataOk(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}${r.horario?' &nbsp;·&nbsp; treina '+escHtml(r.horario):''}${r.area?' &nbsp;·&nbsp; '+escHtml(r.area):''}</span>
+        <span class="tsel ${({'Manhã':'manha','Tarde':'tarde','Noite':'noite'})[r.turno]||'sem'}" style="font-size:13px;padding:4px 12px">${(r.turno||'sem turno').toUpperCase()}</span>
+        <span class="depo-meta">${dataOk(r.ts)?dataOk(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}${r.horario?' &nbsp;·&nbsp; treina '+escHtml(r.horario):''}</span>
       </div>
-      ${falas.map(f=>`<div class="depo-fala"><span class="assunto">${f.nome}</span><p>“${escHtml(f.txt)}”</p>${f.ctx?`<small class="ctx-notas">notas que essa pessoa deu aqui → ${f.ctx}</small>`:''}</div>`).join('')}
+      ${falas.map(f=>`<div class="depo-fala">
+        <span class="assunto">${f.nome}</span><span class="selo-lado ${f.lado==='critica'?'cr':'el'}">${f.lado==='critica'?'reclamação':'elogio'}</span>
+        <p>“${escHtml(f.txt)}”</p>
+        ${f.ctx?`<small class="ctx-notas">notas dela nessas perguntas → ${f.ctx}</small>`:''}
+      </div>`).join('')}
     </div>`).join('') + rodape;
 }
 /* comparativo do mês atual com o anterior */
+/* ============ COMPARAÇÃO MÊS A MÊS, ÁREA POR ÁREA ============
+   Só compara quando os dois meses têm gente suficiente respondendo.
+   Com 2 ou 3 respostas a média balança sozinha e o alerta viraria mentira. */
+const MIN_AMOSTRA = 5;   // mínimo de respostas no mês para a comparação valer
+
+function ymDe(d){ return d.toISOString().slice(0,7); }
+function nomeDoMes(ym){
+  const [y,m] = ym.split('-');
+  const s = new Date(Number(y), Number(m)-1, 1).toLocaleDateString('pt-BR',{month:'long'});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+/* Por que 30 dias e não "mês fechado":
+   se o dono abrisse o relatório no dia 2 do mês, o mês novo teria 2 dias de
+   avaliações contra 30 do mês anterior — a comparação sempre mentiria e o
+   aviso de queda só funcionaria no fim do mês. Com janela de 30 dias os dois
+   lados têm sempre o mesmo tamanho e o alerta serve todo dia. */
+const JANELA_DIAS = 30;
+function janelas(){
+  const agora = Date.now();
+  const d = n => new Date(agora - n*86400000).toISOString();
+  return { aIni: d(JANELA_DIAS), aFim: d(0), bIni: d(JANELA_DIAS*2), bFim: d(JANELA_DIAS),
+           rotA: 'Últimos 30 dias', rotB: '30 dias antes' };
+}
+function mediaCategoriaJanela(id, ini, fim){
+  const d = dados().filter(r=>r.ts && r.ts>=ini && r.ts<fim);
+  const vals = d.map(r=>VAL[r[id]]).filter(Boolean);   // "NÃO UTILIZO" e vazio ficam de fora
+  return vals.length ? {media: vals.reduce((a,b)=>a+b,0)/vals.length, n: vals.length} : {media:null, n:0};
+}
+function mediaEquipeJanela(ini, fim){
+  const av = avalProfs().filter(a=>a.ts && a.ts>=ini && a.ts<fim);
+  return av.length ? {media: av.reduce((x,a)=>x+a.estrelas,0)/av.length, n: av.length} : {media:null, n:0};
+}
+/* lista de mudanças entre as duas janelas, ordenada: maiores quedas primeiro */
+function mudancasDoMes(){
+  const j = janelas();
+  const itens = [];
+  CATS.forEach(([id,nome])=>{
+    const a = mediaCategoriaJanela(id, j.aIni, j.aFim), b = mediaCategoriaJanela(id, j.bIni, j.bFim);
+    itens.push({ id, nome, escala:4, atual:a.media, ant:b.media, nA:a.n, nB:b.n,
+      valido: a.media!==null && b.media!==null && a.n>=MIN_AMOSTRA && b.n>=MIN_AMOSTRA });
+  });
+  const ea = mediaEquipeJanela(j.aIni, j.aFim), eb = mediaEquipeJanela(j.bIni, j.bFim);
+  itens.push({ id:'__equipe', nome:'Equipe (estrelas)', escala:5, atual:ea.media, ant:eb.media, nA:ea.n, nB:eb.n,
+    valido: ea.media!==null && eb.media!==null && ea.n>=MIN_AMOSTRA && eb.n>=MIN_AMOSTRA });
+
+  itens.forEach(x=>{ x.dif = x.valido ? (x.atual - x.ant) : null; });
+  itens.sort((x,y)=>{
+    if(x.dif===null && y.dif===null) return 0;
+    if(x.dif===null) return 1;
+    if(y.dif===null) return -1;
+    return x.dif - y.dif;            // mais negativo primeiro
+  });
+  return { atual: j.rotA, ant: j.rotB, itens };
+}
+/* queda que merece aviso: caiu 0,25 ou mais na escala da própria pergunta */
+function quedasDoMes(){
+  const {atual, ant, itens} = mudancasDoMes();
+  const limite = x => x.escala===5 ? 0.30 : 0.25;
+  return { atual, ant, quedas: itens.filter(x=>x.valido && x.dif <= -limite(x)) };
+}
+
+function desenharAvisoQueda(){
+  const el = document.getElementById('avisoQueda');
+  if(!el) return;
+  const {atual, ant, quedas} = quedasDoMes();
+  if(!quedas.length){ el.innerHTML = ''; return; }
+  const fmt = (v,e) => v.toFixed(2)+' de '+e;
+  el.innerHTML = `
+  <div class="bloco" style="border-color:rgba(255,84,112,.45);background:rgba(255,84,112,.07)">
+    <h3 style="color:var(--ruim)">Piorou nos últimos 30 dias</h3>
+    <p class="vazio" style="padding:0 0 12px">${quedas.length===1?'Uma área caiu':'Essas áreas caíram'} em relação aos 30 dias anteriores. Vale olhar antes que vire cancelamento.</p>
+    ${quedas.map(q=>`
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:11px 0;border-bottom:1px dashed rgba(255,255,255,.08)">
+        <b style="font-size:16px;min-width:170px">${q.nome}</b>
+        <span style="font-size:14px;font-weight:800;color:var(--muted)">${fmt(q.ant,q.escala)}</span>
+        <span style="color:var(--ruim);font-weight:900">→</span>
+        <span style="font-size:16px;font-weight:900;color:var(--ruim)">${fmt(q.atual,q.escala)}</span>
+        <span style="background:rgba(255,84,112,.18);color:var(--ruim);border-radius:99px;padding:4px 12px;font-size:13px;font-weight:900">▼ ${Math.abs(q.dif).toFixed(2)}</span>
+        <span style="font-size:12px;color:var(--muted);font-weight:700;margin-left:auto">${q.nB} respostas antes · ${q.nA} agora</span>
+      </div>`).join('')}
+    <p class="vazio" style="padding:12px 0 0;font-size:13px">Procure nas críticas recentes o que os alunos escreveram sobre ${quedas.map(q=>q.nome.toLowerCase()).slice(0,3).join(', ')}.</p>
+  </div>`;
+}
+
+function desenharCompCategorias(){
+  const el = document.getElementById('compCategorias');
+  if(!el) return;
+  const {atual, ant, itens} = mudancasDoMes();
+  const validos = itens.filter(x=>x.valido);
+  if(!validos.length){
+    el.innerHTML = `<div class="vazio">Ainda não dá para comparar: é preciso pelo menos ${MIN_AMOSTRA} respostas na mesma área nos últimos 30 dias E nos 30 dias anteriores. Com pouca gente respondendo, a média balança sozinha e o número engana.</div>`;
+    return;
+  }
+  const semDados = itens.filter(x=>!x.valido);
+  const barra = x => {
+    const pct = v => Math.max(0, Math.min(100, (v/x.escala)*100));
+    const subiu = x.dif > 0.005, caiu = x.dif < -0.005;
+    const cor = caiu ? 'var(--ruim)' : subiu ? 'var(--bom)' : 'var(--muted)';
+    const seta = caiu ? '▼' : subiu ? '▲' : '=';
+    return `
+    <div style="display:grid;grid-template-columns:minmax(130px,1.1fr) minmax(120px,2fr) 132px;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed rgba(255,255,255,.07)">
+      <b style="font-size:14px">${x.nome}</b>
+      <div>
+        <div style="height:10px;border-radius:99px;background:rgba(255,255,255,.07);overflow:hidden;position:relative">
+          <i style="display:block;height:100%;width:${pct(x.ant)}%;background:rgba(255,255,255,.22)"></i>
+          <i style="display:block;height:100%;width:${pct(x.atual)}%;background:${caiu?'var(--ruim)':subiu?'var(--bom)':'var(--dourado)'};margin-top:-10px;opacity:.95"></i>
+        </div>
+        <div style="font-size:11px;color:var(--muted);font-weight:700;margin-top:3px">antes ${x.ant.toFixed(2)} · agora ${x.atual.toFixed(2)} <span style="opacity:.6">(de ${x.escala})</span> · ${x.nB} e ${x.nA} respostas</div>
+      </div>
+      <span style="text-align:right;color:${cor};font-weight:900;font-size:14px">${seta} ${Math.abs(x.dif).toFixed(2)}</span>
+    </div>`;
+  };
+  el.innerHTML = `
+    <p class="vazio" style="padding:0 0 10px">Barra clara = os 30 dias anteriores. Barra colorida = os últimos 30 dias. Da maior queda para a maior subida.</p>
+    ${validos.map(barra).join('')}
+    ${semDados.length ? `<p class="vazio" style="padding:12px 0 0;font-size:13px">Sem comparação (menos de ${MIN_AMOSTRA} respostas em algum dos meses): ${semDados.map(x=>x.nome).join(' · ')}</p>` : ''}`;
+}
+
 function statsMes(ym){
   const d = dados().filter(r=>r.ts && r.ts.slice(0,7)===ym);
   const notas = d.map(r=>r.nps).filter(n=>typeof n==='number');
@@ -1780,24 +1961,33 @@ function desenharComparativo(){
     ${linha('Críticas', a.criticas||null, b.criticas||null, 0, '', false)}`;
 }
 function cartaoFeedback(r, tipo){
-  const dt = dataOk(r.ts) ? dataOk(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : 'sem data';
-  let tags = '';
-  if(tipo==='critica'){
-    // só a parte negativa dessa pessoa
-    tags = CATS.filter(([id])=>r[id]==='RUIM').map(([,n])=>`<span>${n}: RUIM</span>`).join('')
-         + CATS.filter(([id])=>r[id]==='REGULAR').map(([,n])=>`<span class="reg">${n}: REGULAR</span>`).join('')
-         + CATS.filter(([id])=>!r[id]).map(([,n])=>`<span class="reg">${n}: NÃO RESPONDEU</span>`).join('')
-         + ((typeof r.nps!=='number'||r.nps<=5)?`<span>Indicação: ${r.nps??'não respondeu'}${typeof r.nps==='number'?'/10':''}</span>`:'');
-  } else {
-    // só a parte positiva dessa pessoa
-    tags = CATS.filter(([id])=>r[id]==='EXCELENTE').map(([,n])=>`<span>${n}: EXCELENTE ★</span>`).join('')
-         + CATS.filter(([id])=>r[id]==='BOM').map(([,n])=>`<span class="aten">${n}: BOM</span>`).join('')
-         + ((typeof r.nps==='number'&&r.nps>=6)?`<span>Indicação: ${r.nps}/10</span>`:'');
-  }
+  const d = dataOk(r.ts);
+  const dia  = d ? d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : 'sem data';
+  const hora = d ? d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+
+  /* Com o cartão fechado NÃO repetimos as notas: elas estão inteiras na
+     tabela, a um toque de distância. Aqui fica só o que o dono precisa para
+     bater o olho — quando foi, de que turno é, e o que a pessoa escreveu. */
+  const cls = {'Manhã':'manha','Tarde':'tarde','Noite':'noite'}[r.turno] || 'sem';
+  const selo = `<span class="tsel ${cls}">${(r.turno||'sem turno').toUpperCase()}</span>`;
+
+  /* motivo curto — só aparece quando a pessoa não escreveu nada,
+     senão o cartão fecharia sem dizer por que está nesta aba */
+  const motivos = tipo==='critica'
+    ? CATS.filter(([id])=>r[id]==='RUIM').map(([,n])=>n+' ruim')
+        .concat(CATS.filter(([id])=>r[id]==='REGULAR').map(([,n])=>n+' regular'))
+        .concat(CATS.filter(([id])=>!r[id]).map(([,n])=>n+' em branco'))
+        .concat((typeof r.nps!=='number'||r.nps<=5) ? ['indicação '+(r.nps??'em branco')] : [])
+    : CATS.filter(([id])=>r[id]==='EXCELENTE').map(([,n])=>n+' excelente')
+        .concat(CATS.filter(([id])=>r[id]==='BOM').map(([,n])=>n+' bom'));
+  const motivoTxt = motivos.length
+    ? `<div class="motivo">Não escreveu nada. Está ${tipo==='critica'?'nas críticas':'nos elogios'} por: <b>${motivos.slice(0,3).join(', ')}</b>${motivos.length>3?` e mais ${motivos.length-3}`:''}.</div>`
+    : `<div class="motivo">Essa pessoa não escreveu nada.</div>`;
+
   // o comentário segue o clique da própria seção
   const fala = ([id,n])=>{
     const ctx = notasDoGrupo(r,id);
-    return `<p><b>${n}:</b> “${escHtml(String(r[id]).trim())}”${ctx?`<br><small class="ctx-notas">notas que essa pessoa deu aqui → ${ctx}</small>`:''}</p>`;
+    return `<p><b>${n}:</b> “${escHtml(String(r[id]).trim())}”${ctx?`<br><small class="ctx-notas">notas dela nessas perguntas → ${ctx}</small>`:''}</p>`;
   };
   const coms = COMENTS.filter(([id])=>r[id] && String(r[id]).trim() && ladoComentario(r,id)===tipo).map(fala).join('');
   // o que essa mesma pessoa escreveu do OUTRO lado (não repete o de cima)
@@ -1805,7 +1995,7 @@ function cartaoFeedback(r, tipo){
   const comsOutro = COMENTS.filter(([id])=>r[id] && String(r[id]).trim() && ladoComentario(r,id)===outroLado).map(fala).join('');
   const corVal = v => v==='RUIM'?'v-ruim':v==='REGULAR'?'v-reg':v==='BOM'?'v-bom':v==='EXCELENTE'?'v-exc':'v-nu';
   const detalhe = `
-    <button class="ver-tudo" onclick="const d=this.nextElementSibling; d.hidden=!d.hidden; this.textContent=d.hidden?'VER TODAS AS RESPOSTAS ▾':'FECHAR ▴'">VER TODAS AS RESPOSTAS ▾</button>
+    <button class="ver-tudo" onclick="const c=this.closest('.reclama,.elogio'), d=this.nextElementSibling; d.hidden=!d.hidden; if(c) c.classList.toggle('aberto',!d.hidden); this.textContent=d.hidden?'VER TODAS AS RESPOSTAS ▾':'FECHAR ▴'">VER TODAS AS RESPOSTAS ▾</button>
     <div class="detalhe" hidden>
       <div class="det-grid">
         ${CATS.map(([id,n])=>`<div><span>${n}</span><b class="${corVal(r[id])}">${r[id]||'não respondeu'}</b></div>`).join('')}
@@ -1818,10 +2008,10 @@ function cartaoFeedback(r, tipo){
   return `<div class="${tipo==='critica'?'reclama':'elogio'}">
     <div class="fb-top">
       <span class="fb-num">AVALIAÇÃO #${r.num??'?'}</span>
-      <span class="meta" style="margin:0">${dt} &nbsp;·&nbsp; ${r.horario||'—'} (${r.turno||'—'}) &nbsp;·&nbsp; ${r.area||'—'} &nbsp;·&nbsp; Indicação: ${r.nps??'—'}/10</span>
+      ${selo}
+      <span class="meta" style="margin:0">${dia}${hora?' às '+hora:''} &nbsp;·&nbsp; treina ${r.horario||'horário não informado'}</span>
     </div>
-    <div class="tags">${tags}</div>
-    ${coms ? `<div class="fb-coms"><small>O que essa pessoa escreveu:</small>${coms}</div>` : ''}
+    ${coms ? `<div class="fb-coms"><small>O que essa pessoa escreveu:</small>${coms}</div>` : motivoTxt}
     ${detalhe}
   </div>`;
 }
@@ -1946,6 +2136,13 @@ ESCREVA EXATAMENTE ESTE RELATÓRIO, NESTA ORDEM, COM ESTES TÍTULOS:
    Como a academia está indo, em português simples. Se estiver bem, diga que está bem, sem dourar.
    Termine com: "Se você só puder fazer uma coisa esta semana, faça: ____".
 
+1B) O QUE MUDOU NOS ÚLTIMOS 30 DIAS
+   Use a seção "EVOLUÇÃO". Máximo 6 linhas.
+   Comece pelo que CAIU — diga em português simples o que provavelmente aconteceu e o que investigar.
+   Depois o que subiu, para o Wilson saber o que deu certo e continuar fazendo.
+   Se uma área caiu, cruze com os comentários recentes e mostre a frase de aluno que explica a queda.
+   Se não houver dados para comparar, escreva uma linha só dizendo isso e siga.
+
 2) OS NÚMEROS EXPLICADOS
    Máximo 8 linhas, formato "Número — o que significa — é bom, normal ou ruim".
    Compare cada nota com a meta EXCELENTE (4). Marque com ⚠ tudo que estiver abaixo de 3,0.
@@ -2021,7 +2218,29 @@ Por turno: ${['Manhã','Tarde','Noite'].map(t=>t+' '+d.filter(r=>r.turno===t).le
 Por área: ${['MUSCULAÇÃO','ERGOMETRIA / CARDIO','AULAS COLETIVAS'].map(a=>a+' '+d.filter(r=>r.area===a).length).join(' · ')}
 Não utilizam: ${[['arenakids','Arena Kids'],['quiosque','Quiosque'],['vestiarios','Vestiários']].map(([id,n])=>n+' '+d.filter(r=>r[id]==='NÃO UTILIZO').length).join(' · ')}
 
-===== REGISTROS COMPLETOS =====\n`;
+===== EVOLUÇÃO: ÚLTIMOS 30 DIAS x OS 30 DIAS ANTERIORES =====\n`;
+  {
+    const mud = mudancasDoMes();
+    const val = mud.itens.filter(x=>x.valido);
+    txt += `Janela fixa de 30 dias contra os 30 dias anteriores, independente do período escolhido acima.\nAs duas janelas têm o mesmo tamanho, então a comparação é justa em qualquer dia do mês.\n`;
+    txt += `Só entram áreas com pelo menos ${MIN_AMOSTRA} respostas nos DOIS meses — com pouca gente a média engana.\n`;
+    if(!val.length){
+      txt += `Ainda não há avaliações suficientes nas duas janelas para comparar.\n`;
+    } else {
+      val.forEach(x=>{
+        const seta = x.dif < -0.005 ? 'CAIU' : x.dif > 0.005 ? 'SUBIU' : 'IGUAL';
+        txt += `• ${x.nome}: ${x.ant.toFixed(2)} nos 30 dias anteriores → ${x.atual.toFixed(2)} agora (de ${x.escala}) — ${seta} ${Math.abs(x.dif).toFixed(2)} · ${x.nB} e ${x.nA} respostas\n`;
+      });
+      const q = quedasDoMes().quedas;
+      txt += q.length
+        ? `\nATENÇÃO — ${q.length===1?'esta área piorou':'estas áreas pioraram'} de verdade: ${q.map(x=>x.nome+' (-'+Math.abs(x.dif).toFixed(2)+')').join(' · ')}\n`
+        : `\nNenhuma área piorou de forma relevante em relação ao mês passado.\n`;
+    }
+    const semC = mud.itens.filter(x=>!x.valido).map(x=>x.nome);
+    if(semC.length) txt += `Sem comparação possível (poucas respostas): ${semC.join(' · ')}\n`;
+  }
+
+  txt += `\n===== REGISTROS COMPLETOS =====\n`;
 
   d.forEach((r,i)=>{
     const dt = dataOk(r.ts) ? dataOk(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
@@ -2666,6 +2885,7 @@ function desenharProfsAdmin(){
     return {p, av, m};
   }).sort((a,b)=> b.m-a.m || b.av.length-a.av.length);
 
+  desenharPreviaDestaque();
   document.getElementById('topProfs').innerHTML = lista.length ? ranking.map((x,i)=>{
     const nEl = x.av.filter(a=>a.estrelas>=4).length, nCr = x.av.filter(a=>a.estrelas<=3).length;
     const resumo = x.av.length ? `<span class="pnovas" style="margin:5px 0 0;display:flex">
@@ -2836,6 +3056,164 @@ function salvarEdicaoProf(id){
   alert('Professor atualizado! A mudança já foi pra nuvem e aparece em todos os aparelhos.');
 }
 function fecharPerfilProf(){ document.getElementById('perfilProf').classList.remove('on'); desenharProfsAdmin(); }
+
+/* ============ CARD DO DESTAQUE DO MÊS (imagem pra postar) ============
+   Desenha tudo no canvas, em 1080x1350 (formato de post).
+   Não depende de internet nem de nenhuma biblioteca. */
+const CARD_MIN_AV = 3;   // menos que isso não é destaque, é sorte
+
+function destaqueDoMes(ym){
+  const mes = ym || new Date().toISOString().slice(0,7);
+  const av = avalProfs().filter(a=>a.ts && a.ts.slice(0,7)===mes);
+  if(!av.length) return null;
+  const lista = profs().map(p=>{
+    const meus = av.filter(a=>String(a.prof)===String(p.id));
+    /* de propósito NÃO usamos comentário de aluno no card: é texto que ninguém
+       revisou, pode sair impróprio no mural e erra o gênero de quem recebe. */
+    return { p, n: meus.length, media: meus.length ? meus.reduce((x,a)=>x+a.estrelas,0)/meus.length : 0 };
+  }).filter(x=>x.n >= CARD_MIN_AV);
+  if(!lista.length) return null;
+  lista.sort((a,b)=> b.media-a.media || b.n-a.n);
+  return Object.assign({mes}, lista[0]);
+}
+
+function desenharPreviaDestaque(){
+  const el = document.getElementById('cardDestaquePrevia');
+  const st = document.getElementById('cardDestaqueStatus');
+  if(!el) return;
+  const d = destaqueDoMes();
+  if(!d){
+    el.innerHTML = `<div class="vazio" style="padding:0 0 14px">Ainda não há destaque neste mês — é preciso alguém com pelo menos ${CARD_MIN_AV} avaliações.</div>`;
+    if(st) st.textContent = '';
+    return;
+  }
+  const nc = nomeCargo(d.p.nome);
+  el.innerHTML = `
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:rgba(0,0,0,.22);border-radius:14px;padding:12px 16px;margin-bottom:14px">
+    ${d.p.foto?`<img src="${d.p.foto}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid var(--dourado)" alt="">`:`<span style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.08);display:block"></span>`}
+    <div>
+      <b style="font-size:17px">${escHtml(nc.n)}</b>${nc.c?`<span style="color:var(--dourado);font-size:12px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase"> · ${escHtml(nc.c)}</span>`:''}
+      <div style="color:var(--dourado);font-size:15px">${'★'.repeat(Math.round(d.media))}${'☆'.repeat(5-Math.round(d.media))} <span style="color:var(--muted);font-size:13px;font-weight:700">${d.media.toFixed(2)} · ${d.n} avaliações em ${nomeDoMes(d.mes).toLowerCase()}</span></div>
+    </div>
+  </div>`;
+  if(st) st.textContent = 'Sai em tamanho A4 — imprima e cole no mural.';
+}
+
+function baixarCardDestaque(){
+  const d = destaqueDoMes();
+  const st = document.getElementById('cardDestaqueStatus');
+  if(!d){ alert(`Ainda não há destaque neste mês.\n\nÉ preciso alguém da equipe com pelo menos ${CARD_MIN_AV} avaliações.`); return; }
+  if(st) st.textContent = 'Montando a imagem…';
+
+  /* Formato A4 em pé (1240 x 1754 = 150 pontos por polegada).
+     Sai bonito impresso em folha comum e também serve para mandar no grupo. */
+  const L = 1240, A = 1754;
+  const cv = document.createElement('canvas');
+  cv.width = L; cv.height = A;
+  const c = cv.getContext && cv.getContext('2d');
+  if(!c){ alert('Este aparelho não conseguiu montar a imagem.\n\nTente pelo computador ou por outro navegador.'); if(st) st.textContent=''; return; }
+  const nc = nomeCargo(d.p.nome);
+
+  /* ---------- fundo ---------- */
+  const fundo = c.createLinearGradient(0,0,L*0.4,A);
+  fundo.addColorStop(0, MARCA.corFundoTopo);
+  fundo.addColorStop(.55, MARCA.corFundoMeio);
+  fundo.addColorStop(1, MARCA.corFundoBaixo);
+  c.fillStyle = fundo; c.fillRect(0,0,L,A);
+
+  /* ---------- cabeçalho ---------- */
+  const CAB = 210;
+  c.fillStyle = MARCA.corFaixa; c.fillRect(0,0,L,CAB);
+  c.fillStyle = MARCA.corDestaque; c.fillRect(0,CAB-8,L,8);
+
+  const centro = (txt, y, fonte, cor, maxL) => {
+    c.font = fonte; c.fillStyle = cor; c.textAlign = 'center';
+    const limite = maxL || (L-140);
+    let t = String(txt);
+    if(c.measureText(t).width > limite){
+      while(t.length > 4 && c.measureText(t+'…').width > limite) t = t.slice(0,-1);
+      t += '…';
+    }
+    c.fillText(t, L/2, y);
+    return t;
+  };
+
+  centro(MARCA.nome, 96, '900 italic 40px Anton, Impact, sans-serif', 'rgba(255,255,255,.92)');
+  centro(MARCA.reconhecimento, 152, '900 22px Montserrat, Arial, sans-serif', MARCA.corDestaque, L-160);
+
+  /* ---------- título ---------- */
+  centro('DESTAQUE DO MÊS', 330, '900 italic 90px Anton, Impact, sans-serif', MARCA.corDestaque);
+  const mesTxt = nomeDoMes(d.mes).toUpperCase() + ' DE ' + d.mes.slice(0,4);
+  centro(mesTxt, 398, '800 30px Montserrat, Arial, sans-serif', 'rgba(255,255,255,.58)');
+
+  /* ---------- rodapé (desenhado antes dos textos) ---------- */
+  const ROD = 150;
+  c.fillStyle = MARCA.corFaixa; c.fillRect(0, A-ROD, L, ROD);
+  c.fillStyle = MARCA.corDestaque; c.fillRect(0, A-ROD-8, L, 8);
+
+  const seguir = () => {
+    /* nome e cargo */
+    centro(nc.n.toUpperCase(), 1080, '900 italic 100px Anton, Impact, sans-serif', '#FFFFFF', L-120);
+    if(nc.c) centro(nc.c.toUpperCase(), 1140, '900 italic 34px Montserrat, Arial, sans-serif', MARCA.corDestaque, L-180);
+
+    /* estrelas */
+    const cheias = Math.round(d.media);
+    c.textAlign = 'center'; c.font = '82px Arial, sans-serif'; c.fillStyle = MARCA.corDestaque;
+    c.fillText('★'.repeat(cheias) + '☆'.repeat(5-cheias), L/2, 1268);
+
+    /* caixa da nota */
+    const bx = 300, bw = L-600, by = 1310, bh = 130;
+    c.fillStyle = 'rgba(255,255,255,.06)'; c.fillRect(bx, by, bw, bh);
+    c.strokeStyle = 'rgba(255,201,60,.45)'; c.lineWidth = 2; c.strokeRect(bx, by, bw, bh);
+    centro(d.media.toFixed(2).replace('.',',') + ' de 5', by+68, '900 italic 62px Anton, Impact, sans-serif', '#FFFFFF');
+    centro(d.n + ' ' + (d.n===1 ? MARCA.publico1+' avaliou' : MARCA.publico+' avaliaram') + ' este mês',
+           by+108, '800 26px Montserrat, Arial, sans-serif', 'rgba(255,255,255,.62)');
+
+    /* frase fixa da marca — nunca texto de avaliação, para não sair nada
+       inadequado no mural e para não errar o gênero de ninguém */
+    centro(MARCA.elogio, 1530, 'italic 800 34px Montserrat, Arial, sans-serif', 'rgba(255,255,255,.90)', L-200);
+
+    /* rodapé */
+    centro(MARCA.slogan, A-58, '900 italic 30px Montserrat, Arial, sans-serif', 'rgba(255,255,255,.80)', L-120);
+
+    cv.toBlob(b=>{
+      if(!b){ alert('Não consegui gerar a imagem neste aparelho.'); if(st) st.textContent=''; return; }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = 'destaque-' + nc.n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-') + '-' + d.mes + '.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+      if(st) st.textContent = 'Pronto! Está nos downloads, em tamanho de folha A4 — é só imprimir.';
+    }, 'image/png');
+  };
+
+  /* ---------- foto redonda com anel ---------- */
+  const raio = 250, cx = L/2, cy = 720;
+  const glow = c.createRadialGradient(cx,cy,30,cx,cy,raio+230);
+  glow.addColorStop(0,'rgba(255,201,60,.26)'); glow.addColorStop(1,'rgba(255,201,60,0)');
+  c.fillStyle = glow; c.fillRect(0, cy-raio-230, L, (raio+230)*2);
+
+  const moldura = () => {
+    c.beginPath(); c.arc(cx, cy, raio+16, 0, Math.PI*2);
+    c.strokeStyle = MARCA.corDestaque; c.lineWidth = 10; c.stroke();
+  };
+  if(d.p.foto){
+    const img = new Image();
+    img.onload = ()=>{
+      c.save(); c.beginPath(); c.arc(cx, cy, raio, 0, Math.PI*2); c.clip();
+      const lado = Math.min(img.width, img.height);
+      c.drawImage(img, (img.width-lado)/2, (img.height-lado)/2, lado, lado, cx-raio, cy-raio, raio*2, raio*2);
+      c.restore(); moldura(); seguir();
+    };
+    img.onerror = ()=>{ c.fillStyle='rgba(255,255,255,.10)'; c.beginPath(); c.arc(cx,cy,raio,0,Math.PI*2); c.fill(); moldura(); seguir(); };
+    img.src = d.p.foto;
+  } else {
+    c.fillStyle='rgba(255,255,255,.10)'; c.beginPath(); c.arc(cx,cy,raio,0,Math.PI*2); c.fill();
+    c.font='900 italic 180px Anton, Impact, sans-serif'; c.fillStyle='rgba(255,255,255,.45)'; c.textAlign='center';
+    c.fillText((nc.n[0]||'?').toUpperCase(), cx, cy+62);
+    moldura(); seguir();
+  }
+}
 
 /* ===================== PANORAMA DA EQUIPE =====================
    Uma tela só com TUDO de TODO MUNDO: nota, horários e cada comentário

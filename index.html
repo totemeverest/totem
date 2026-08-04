@@ -887,7 +887,7 @@ body.teclado .voltar{padding:6px 12px;font-size:11px}
 
     <!-- Primeiro ONDE estou (abas), depois O QUE vejo (busca e filtros).
          É como todo aplicativo funciona e evita o dono se perder. -->
-    <div class="caixa-filtros">
+    <div class="caixa-filtros" id="caixaFiltros">
       <div class="bf-busca">
         <input class="campo" id="campoBusca" placeholder="🔍 Buscar palavra nos comentários"
           oninput="clearTimeout(window._tb);window._tb=setTimeout(()=>setBusca(this.value),350)">
@@ -1810,6 +1810,8 @@ function setSub(qual, modo){
     if(b.dataset.s && b.dataset.s.startsWith(qual+'-')) b.classList.toggle('on', b.dataset.s===qual+'-'+modo);
   });
 }
+/* abas em que a busca e os filtros de período/turno realmente mudam algo */
+const ABAS_COM_FILTRO = ['geral','elogios','criticas','notas'];
 function setAba(t){
   document.querySelectorAll('.abas button').forEach(b=>b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
@@ -1817,6 +1819,11 @@ function setAba(t){
   if(!alvo) return;
   alvo.classList.add('on');
   fecharAcoes();
+  /* A caixa de busca e filtros só vale para as avaliações da academia.
+     Equipe, Prêmios e Auditoria têm seus próprios controles — deixar a caixa
+     visível ali fazia parecer que ela filtrava, e não filtrava nada. */
+  const cx = document.getElementById('caixaFiltros');
+  if(cx) cx.hidden = !ABAS_COM_FILTRO.includes(t);
   try{ const c = document.querySelector('#painel .pcorpo'); if(c) c.scrollTop = 0; }catch(e){}
   // abriu a aba = viu as novidades dela
   if(t==='criticas'){ localStorage.setItem(KV_C, new Date().toISOString()); desenharBadges(); }
@@ -2650,9 +2657,15 @@ Não utilizam: ${[['arenakids','Arena Kids'],['quiosque','Quiosque'],['vestiario
   try{ document.execCommand('copy'); }catch(e){}
   ta.remove();
 
-  // registra no histórico o período auditado
-  const maisNova = d.map(r=>r.ts).filter(Boolean).sort().pop();
-  const reg = { uid: novoUid(), ts: new Date().toISOString(), de: pDe, ate10: pAte, ate: maisNova, qtd: d.length, sync:false };
+  // registra no histórico o período auditado.
+  // Se o dono não escolheu datas, guarda as datas reais do que foi analisado —
+  // senão o histórico ficava mostrando "— a —" e não servia para nada.
+  const ordenadas = d.map(r=>r.ts).filter(Boolean).sort();
+  const maisNova = ordenadas[ordenadas.length-1];
+  const soDia = t => t ? String(t).slice(0,10) : '';
+  const reg = { uid: novoUid(), ts: new Date().toISOString(),
+    de: pDe || soDia(ordenadas[0]), ate10: pAte || soDia(maisNova),
+    ate: maisNova, qtd: d.length, sync:false };
   const l = auditorias(); l.push(reg);
   localStorage.setItem(KAUDIT, JSON.stringify(l));
   salvarNuvem('auditorias', reg);

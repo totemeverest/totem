@@ -207,30 +207,63 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 .painel header button.perigo{border-color:rgba(255,84,112,.5);color:var(--ruim)}
 .pcorpo{flex:1;overflow-y:auto;padding:20px 26px 40px}
 .filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+/* Caixa que agrupa busca e filtros: separa visualmente "onde estou" (abas,
+   acima) de "o que estou vendo" (aqui dentro). */
+.caixa-filtros{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+  border-radius:14px;padding:14px 16px 4px;margin-bottom:18px}
+.bf-busca{display:flex;gap:10px;align-items:center;margin-bottom:14px}
+.bf-busca .campo{flex:1;min-width:0;margin:0;padding:11px 14px;font-size:14px}
+.bf-rot{font-size:10px;font-weight:900;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;margin:0 0 7px}
+/* navegação entre meses na comparação */
+.comp-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.comp-nav b{font-family:var(--fTitulo);font-style:italic;font-size:17px;letter-spacing:1px;
+  text-align:center;flex:1;line-height:1.2}
+.comp-nav b span{color:var(--muted);font-size:13px;padding:0 4px}
+.comp-nav button{width:42px;height:42px;flex:none;border-radius:11px;border:1px solid var(--linha);
+  background:rgba(255,255,255,.05);color:var(--texto);font-size:17px;font-weight:800;cursor:pointer}
+.comp-nav button:disabled{opacity:.25;cursor:default}
+/* histórico de auditorias — compacto, uma linha por auditoria */
+.hist-linha{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:10px 0;
+  border-bottom:1px dashed rgba(255,255,255,.08)}
+.hist-per{font-family:var(--fTitulo);font-style:italic;font-size:15px;letter-spacing:1px;color:var(--dourado)}
+.hist-det{font-size:12.5px;color:var(--muted);font-weight:700}
+.caixa-filtros .filtros{margin-bottom:12px}
+/* botão que abre as 7 faixas de horário (ficam escondidas por padrão) */
+.btn-hora{border:1px dashed var(--linha);background:none;color:var(--muted);border-radius:10px;
+  padding:9px 16px;font-size:12.5px;font-weight:800;font-style:italic;cursor:pointer;
+  letter-spacing:.5px;margin-bottom:12px;display:block}
+.btn-hora.aberto{border-style:solid}
+.btn-hora.ativo{border-color:var(--roxo);color:#fff;background:rgba(109,63,240,.18)}
 .filtros button{border:1px solid var(--linha);background:none;color:var(--muted);border-radius:99px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;font-style:italic;letter-spacing:.5px}
 .filtros button.on{background:var(--roxo);border-color:var(--roxo);color:#fff}
 .filtros .sep{width:1px;background:rgba(255,255,255,.12);margin:4px 6px}
 .abas{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
-.abas button{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--muted);border-radius:12px;padding:13px 24px;font-size:14px;font-weight:900;font-style:italic;letter-spacing:1px;cursor:pointer;transition:.2s;text-transform:uppercase}
+/* Inativa: neutra, com um traço fino da cor do assunto na esquerda.
+   Ativa: preenchida na cor. Só uma aba fica colorida por vez — é o que
+   evita o efeito carnaval e faz o olho achar onde está na hora. */
+.abas button{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.04);color:var(--muted);border-radius:12px;padding:13px 22px;font-size:14px;font-weight:900;font-style:italic;letter-spacing:1px;cursor:pointer;transition:.18s;text-transform:uppercase}
+.abas button:hover{background:rgba(255,255,255,.08)}
 .abas button.on{background:linear-gradient(135deg,var(--roxo),var(--roxo-forte));border-color:transparent;color:#fff;box-shadow:0 8px 22px rgba(109,63,240,.4)}
-/* cores por aba */
-.abas button[data-t="geral"]{color:var(--dourado);border-color:rgba(255,201,60,.35)}
-.abas button[data-t="geral"].on{background:linear-gradient(135deg,#ffc93c,#ffb020);color:#2a1450;box-shadow:0 8px 22px rgba(255,176,32,.4)}
-.abas button[data-t="criticas"]{color:var(--ruim);border-color:rgba(255,84,112,.35)}
-.abas button[data-t="criticas"].on{background:linear-gradient(135deg,#ff5470,#e83b5a);color:#fff;box-shadow:0 8px 22px rgba(255,84,112,.4)}
-.abas button[data-t="elogios"]{color:var(--bom);border-color:rgba(76,217,123,.35)}
-.abas button[data-t="elogios"].on{background:linear-gradient(135deg,#4cd97b,#2fbf68);color:#0e2417;box-shadow:0 8px 22px rgba(76,217,123,.4)}
-.abas button[data-t="professores"]{color:#5aa2ff;border-color:rgba(90,162,255,.35)}
-.abas button[data-t="professores"].on{background:linear-gradient(135deg,#5aa2ff,#2f6fe0);color:#fff;box-shadow:0 8px 22px rgba(90,162,255,.4)}
-.abas button[data-t="roleta"]{color:var(--regular);border-color:rgba(255,162,62,.35)}
-.abas button[data-t="roleta"].on{background:linear-gradient(135deg,#ffa23e,#f08c1e);color:#2a1450;box-shadow:0 8px 22px rgba(255,162,62,.4)}
+/* a cor de cada assunto mora no traço da esquerda (::before usa currentColor) */
+.abas button[data-t="geral"]{color:var(--dourado)}
+.abas button[data-t="geral"].on{background:linear-gradient(135deg,#ffc93c,#ffb020);color:#2a1450;box-shadow:0 8px 22px rgba(255,176,32,.35)}
+.abas button[data-t="elogios"]{color:var(--bom)}
+.abas button[data-t="elogios"].on{background:linear-gradient(135deg,#4cd97b,#2fbf68);color:#0e2417;box-shadow:0 8px 22px rgba(76,217,123,.35)}
+.abas button[data-t="criticas"]{color:var(--ruim)}
+.abas button[data-t="criticas"].on{background:linear-gradient(135deg,#ff5470,#e83b5a);color:#fff;box-shadow:0 8px 22px rgba(255,84,112,.35)}
+.abas button[data-t="professores"]{color:#5aa2ff}
+.abas button[data-t="professores"].on{background:linear-gradient(135deg,#5aa2ff,#2f6fe0);color:#fff;box-shadow:0 8px 22px rgba(90,162,255,.35)}
+.abas button[data-t="notas"]{color:var(--muted)}
+.abas button[data-t="roleta"]{color:var(--regular)}
+.abas button[data-t="roleta"].on{background:linear-gradient(135deg,#ffa23e,#f08c1e);color:#2a1450;box-shadow:0 8px 22px rgba(255,162,62,.35)}
 /* selo de novidades */
 .tag-nova{display:inline-block;margin-left:8px;background:var(--ruim);color:#fff;border-radius:99px;padding:3px 10px;font-size:11px;font-weight:900;letter-spacing:.5px;vertical-align:middle}
 .tag-nova[hidden],[hidden]{display:none !important}   /* sem isso o selo vazio aparecia como um risquinho */
 .tag-nova.verde{background:var(--bom);color:#0e2417}
 .tag-nova.ouro{background:var(--dourado);color:#2a1450}
-.abas button[data-t="auditoria"]{color:var(--dourado);border-color:rgba(255,201,60,.35)}
-.abas button[data-t="auditoria"].on{background:linear-gradient(135deg,#ffc93c,#ffb020);color:#2a1450;box-shadow:0 8px 22px rgba(255,176,32,.4)}
+.abas button[data-t="auditoria"]{color:var(--dourado)}
+.abas button[data-t="auditoria"].on{background:linear-gradient(135deg,#ffc93c,#ffb020);color:#2a1450;box-shadow:0 8px 22px rgba(255,176,32,.35)}
 .pnovas{display:inline-flex;gap:5px;margin-left:8px;vertical-align:middle}
 .pnovas span{font-size:10px;font-weight:900;padding:2px 8px;border-radius:99px}
 .pnovas .nc{background:rgba(255,84,112,.2);color:var(--ruim)}
@@ -361,6 +394,144 @@ textarea:focus{border-color:var(--roxo);box-shadow:0 0 18px rgba(147,111,245,.35
 @media(max-width:760px){
   .prof-grid{grid-template-columns:repeat(2,1fr)}
   .prof-linha{flex-wrap:wrap}
+}
+
+/* ====================================================================
+   RELATÓRIO NO CELULAR (retrato)
+   Antes, os 8 botões do topo e as 7 abas empilhavam e comiam a tela
+   inteira antes de aparecer qualquer número. Aqui:
+   - o topo vira "☰ AÇÕES" + "✕", e os botões abrem numa gaveta
+   - abas e filtros viram grade compacta (só rolagem vertical)
+   ==================================================================== */
+/* ====================================================================
+   AJUSTES x LEITURA — duas coisas diferentes, dois lugares diferentes.
+   O topo guarda só manutenção (backup, restaurar, atualizar, apagar) e
+   fica recolhido. As abas, logo abaixo, são o que o dono vem ler.
+   ==================================================================== */
+/* trava geral: nada de rolagem lateral em lugar nenhum do relatório */
+.painel, .painel .pcorpo, .painel .tab{max-width:100%;overflow-x:hidden}
+.painel *{max-width:100%}
+.painel img{height:auto}
+.painel header{position:relative}
+.htopo{display:flex;gap:10px;flex:none}
+.btn-cfg{border-color:rgba(255,255,255,.22) !important}
+.btn-sair{border-color:rgba(255,84,112,.4) !important;color:var(--ruim) !important}
+.painel header .hbtns{display:none;position:absolute;top:100%;right:0;z-index:9;
+  flex-direction:column;gap:14px;padding:18px;background:var(--bg2);width:min(340px,92vw);
+  border:1px solid var(--linha);border-radius:0 0 16px 16px;box-shadow:0 22px 50px rgba(0,0,0,.65)}
+.painel header.acoes-abertas .hbtns{display:flex}
+.cfg-grupo{display:flex;flex-direction:column;gap:8px}
+.cfg-tit{font-size:10px;font-weight:900;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.painel header .hbtns button{width:100%;text-align:left;padding:13px 15px;font-size:14px}
+
+/* ---- ABAS: cor só onde ela informa algo ----
+   Inativa = neutra com um traço fino da cor do assunto.
+   Ativa   = preenchida. Assim a tela não vira carnaval e o olho
+   encontra na hora onde está. */
+.abas button{position:relative;overflow:hidden}
+.abas button::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:currentColor;opacity:.55}
+.abas button.on::before{opacity:0}
+.abas button:not(.on){background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.10)}
+
+@media(max-width:820px){
+  .painel header{padding:10px 14px;gap:8px;flex-wrap:nowrap}
+  .painel header .ptit{gap:8px;flex:1;min-width:0}
+  .painel header .ptit img{height:28px}
+  .painel header b{font-size:16px;letter-spacing:1px;line-height:1.1}
+  .painel header .ptit small{font-size:10px !important;display:block}
+  .htopo button{padding:10px 12px !important;font-size:11.5px !important;letter-spacing:.5px}
+  .painel header .hbtns{left:0;right:0;width:auto;border-radius:0}
+
+  .pcorpo{padding:14px 14px 34px}
+
+  /* NADA de rolagem lateral: tudo em grade, só se rola para baixo */
+  .abas{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px;overflow:visible}
+  .abas button{padding:12px 10px;font-size:12px;letter-spacing:.3px;width:100%;
+    display:flex;align-items:center;justify-content:center;gap:6px;text-align:center;min-height:46px}
+  .abas button::before{width:4px}
+  .abas .tag-nova{font-size:9px;padding:2px 6px;margin-left:0}
+  .filtros{display:grid;gap:7px;margin-bottom:10px;overflow:visible}
+  #filtroPeriodo{grid-template-columns:repeat(3,1fr)}
+  #filtrosTurno{grid-template-columns:repeat(4,1fr)}
+  #filtrosHora{grid-template-columns:repeat(2,1fr)}
+  .filtros button{padding:9px 6px;font-size:11.5px;width:100%;white-space:nowrap}
+  .filtros .sep{display:none}
+
+  /* nenhum elemento pode ser mais largo que a tela — é o que criaria
+     rolagem lateral sem ninguém pedir */
+  #campoBusca{min-width:0 !important}
+  .linha-comp{grid-template-columns:1fr 62px 56px 64px;gap:6px;font-size:11.5px}
+  #avisoQueda b{min-width:0 !important}
+  #compCategorias > div[style*="grid"]{grid-template-columns:1fr !important;gap:4px !important}
+  #compCategorias > div[style*="grid"] > span:last-child{text-align:left !important}
+  #panCorpo div[style*="minmax(230px"]{grid-template-columns:1fr !important}
+  #panCorpo div[style*="min-width:180px"]{min-width:0 !important}
+  #panCorpo div[style*="min-width:230px"]{min-width:0 !important}
+  .cod{min-width:0 !important;word-break:break-word}
+  .prof-form, .bloco{max-width:100%}
+  .bloco img{max-width:100%}
+  table, pre{max-width:100%;overflow-wrap:anywhere}
+
+  /* --- espaçamento e alinhamento do painel no celular --- */
+  .caixa-filtros{padding:12px 12px 2px;margin-bottom:14px;border-radius:12px}
+  .bf-busca{margin-bottom:12px}
+  .bf-rot{margin-bottom:6px}
+  .caixa-filtros .filtros{margin-bottom:10px}
+  .btn-hora{width:100%;text-align:center;margin-bottom:10px;padding:10px}
+
+  /* KPIs: rótulo em cima, número embaixo, alinhados na mesma linha de base */
+  .kpis{gap:9px;margin-bottom:14px}
+  .kpi{padding:13px 14px;display:flex;flex-direction:column;justify-content:space-between;min-height:96px}
+  .kpi small{font-size:10px;letter-spacing:1.5px;line-height:1.3;display:block}
+  .kpi b{font-size:29px;line-height:1;margin-top:4px}
+
+  /* comparação de meses */
+  .comp-nav b{font-size:14px}
+  .comp-nav button{width:38px;height:38px;font-size:15px}
+  .linha-comp.cab{font-size:10px}
+
+  /* barras de média: rótulo em cima, barra e número embaixo */
+  .linha-media{grid-template-columns:1fr 58px !important;
+    grid-template-areas:"rot rot" "barra val";
+    gap:5px 8px;font-size:12.5px;margin-bottom:13px;align-items:center}
+  .linha-media > *:first-child{grid-area:rot;font-weight:800}
+  .linha-media > .barra{grid-area:barra}
+  .linha-media > .val{grid-area:val;text-align:right;font-size:13px}
+
+  /* histórico e listas */
+  .hist-linha{padding:9px 0}
+  .premio-linha{flex-direction:column;align-items:flex-start;gap:8px}
+  .prof-linha{gap:10px}
+  .prof-linha .pdel{margin-left:auto}
+  .mes-nav{justify-content:space-between}
+  .mes-nav button{width:40px;height:40px}
+  .subabas{display:flex;gap:8px}
+  .subabas button{flex:1;text-align:center;padding:10px 8px;font-size:12px}
+  .bloco{padding:15px;margin-bottom:13px;border-radius:14px}
+  .bloco h3{font-size:13px;margin-bottom:12px}
+  #campoBusca{min-width:0 !important;font-size:14px !important;padding:11px 13px !important}
+  .linha-media{grid-template-columns:96px 1fr 62px;font-size:11.5px;gap:8px}
+  .det-grid{grid-template-columns:1fr !important}
+  .fb-top{gap:8px}
+  .fb-num{font-size:13px;padding:4px 11px}
+  .reclama,.elogio{padding:12px 13px;margin-bottom:13px}
+  .mes-nav b{min-width:0;font-size:17px}
+}
+/* Panorama e perfil da equipe no celular */
+@media(max-width:820px){
+  .painel.perfilp header{flex-wrap:nowrap}
+  .painel.perfilp header .hbtns{display:flex;position:static;flex-direction:row;padding:0;background:none;
+    border:none;box-shadow:none}
+  .painel.perfilp header .hbtns button{width:auto;padding:10px 14px;font-size:13px}
+  /* panorama: os botões quebram linha, nunca rolam de lado */
+  #panCorpo > div[style*="display:flex"]{flex-wrap:wrap !important;overflow:visible !important}
+  #panCorpo button{flex:1 1 auto;min-width:0}
+  #ppCorpo .ph svg{width:74px;height:74px}
+}
+@media(max-width:400px){
+  .kpis{grid-template-columns:1fr}
+  .painel header b{font-size:14px}
+  .abas button{padding:10px 13px;font-size:12px}
 }
 .reclama .meta,.elogio .meta{font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:700;letter-spacing:.4px}
 .reclama .tags,.elogio .tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
@@ -681,35 +852,53 @@ body.teclado .voltar{padding:6px 12px;font-size:11px}
 <div class="painel" id="painel">
   <header>
     <div class="ptit"><img class="logo-img" src="logo1.png" alt=""><b>RELATÓRIO EVEREST</b><small id="nuvemStatus" style="font-size:12px;font-weight:700;color:var(--muted)"></small></div>
-    <div class="hbtns">
-      <button onclick="atualizarAgora()">⟳ Atualizar dados</button>
-      <button style="border-color:rgba(90,162,255,.55);color:#5aa2ff" onclick="atualizarApp()">⬆ Atualizar app</button>
-      <button style="border-color:rgba(255,201,60,.6);color:var(--dourado)" onclick="setAba('auditoria')">✦ Auditoria IA</button>
-      <button onclick="compartilharResumo()">Compartilhar resumo</button>
-      <button style="border-color:rgba(76,217,123,.5);color:var(--bom)" onclick="fazerBackup()">Salvar backup</button>
-      <button onclick="document.getElementById('arqRestaurar').click()">Restaurar</button>
-      <input type="file" id="arqRestaurar" accept=".json,application/json" hidden>
-      <button class="perigo" onclick="apagarTudo()">Apagar dados</button>
-      <button onclick="fecharPainel()">✕ Fechar</button>
+    <div class="htopo">
+      <button class="btn-cfg" onclick="toggleAcoes()" aria-label="Ajustes">⚙ AJUSTES</button>
+      <button class="btn-sair" onclick="fecharPainel()">✕ FECHAR</button>
+    </div>
+    <!-- gaveta de ajustes: só coisas de manutenção, nada de leitura -->
+    <div class="hbtns" id="hbtns">
+      <div class="cfg-grupo">
+        <span class="cfg-tit">Dados</span>
+        <button onclick="atualizarAgora()">⟳ Atualizar dados da nuvem</button>
+        <button style="border-color:rgba(76,217,123,.5);color:var(--bom)" onclick="fazerBackup()">💾 Salvar backup</button>
+        <button onclick="document.getElementById('arqRestaurar').click()">↩ Restaurar backup</button>
+        <input type="file" id="arqRestaurar" accept=".json,application/json" hidden>
+      </div>
+      <div class="cfg-grupo">
+        <span class="cfg-tit">Sistema</span>
+        <button style="border-color:rgba(90,162,255,.55);color:#5aa2ff" onclick="atualizarApp()">⬆ Atualizar o app</button>
+        <button class="perigo" onclick="apagarTudo()">🗑 Apagar dados</button>
+      </div>
     </div>
   </header>
   <div class="pcorpo">
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
-      <input class="campo" id="campoBusca" placeholder="🔍 Buscar palavra nos comentários (ex.: espelho, banheiro, espaço...)"
-        style="flex:1;min-width:260px;margin:0;padding:12px 16px;font-size:15px"
-        oninput="clearTimeout(window._tb);window._tb=setTimeout(()=>setBusca(this.value),350)">
-      <button class="btn-arq" onclick="limparBusca()">Limpar</button>
-    </div>
-    <div class="filtros" id="filtroPeriodo"></div>
-    <div class="filtros" id="filtros"></div>
+    <!-- ordem pensada para a leitura do dono: panorama → o que deu certo →
+         o que precisa de ação → gente → detalhe → engajamento → análise -->
     <div class="abas" id="abas">
       <button data-t="geral" class="on" onclick="setAba('geral')">Visão Geral</button>
-      <button data-t="notas" onclick="setAba('notas')">Notas</button>
-      <button data-t="criticas" onclick="setAba('criticas')">Críticas<span class="tag-nova" id="badgeCriticas" hidden></span></button>
       <button data-t="elogios" onclick="setAba('elogios')">Elogios<span class="tag-nova verde" id="badgeElogios" hidden></span></button>
+      <button data-t="criticas" onclick="setAba('criticas')">Críticas<span class="tag-nova" id="badgeCriticas" hidden></span></button>
       <button data-t="professores" onclick="setAba('professores')">Equipe<span class="tag-nova" id="badgeEquipe" hidden></span></button>
+      <button data-t="notas" onclick="setAba('notas')">Notas</button>
       <button data-t="roleta" onclick="setAba('roleta')">Prêmios</button>
       <button data-t="auditoria" onclick="setAba('auditoria')">Auditoria IA<span class="tag-nova ouro" id="badgeAudit" hidden></span></button>
+    </div>
+
+    <!-- Primeiro ONDE estou (abas), depois O QUE vejo (busca e filtros).
+         É como todo aplicativo funciona e evita o dono se perder. -->
+    <div class="caixa-filtros">
+      <div class="bf-busca">
+        <input class="campo" id="campoBusca" placeholder="🔍 Buscar palavra nos comentários"
+          oninput="clearTimeout(window._tb);window._tb=setTimeout(()=>setBusca(this.value),350)">
+        <button class="btn-arq" onclick="limparBusca()">Limpar</button>
+      </div>
+      <div class="bf-rot">Período</div>
+      <div class="filtros" id="filtroPeriodo"></div>
+      <div class="bf-rot">Turno</div>
+      <div class="filtros" id="filtrosTurno"></div>
+      <button class="btn-hora" id="btnHora" onclick="toggleHora()">⌄ Filtrar por horário exato</button>
+      <div class="filtros" id="filtrosHora" hidden></div>
     </div>
     <div id="tab-geral" class="tab on">
       <div id="avisoQueda"></div>
@@ -1593,6 +1782,23 @@ function abrirPainel(){
   }
 }
 /* sub-abas: alterna entre os cards completos e a leitura só dos comentários */
+/* gaveta de ações do relatório — só existe no celular */
+function toggleAcoes(){
+  const h = document.querySelector('#painel header');
+  if(h) h.classList.toggle('acoes-abertas');
+}
+function fecharAcoes(){
+  const h = document.querySelector('#painel header');
+  if(h) h.classList.remove('acoes-abertas');
+}
+/* qualquer botão da gaveta fecha a gaveta depois de agir */
+document.addEventListener('click', e=>{
+  const b = e.target.closest('#hbtns button');
+  if(b){ setTimeout(fecharAcoes, 60); return; }
+  const h = document.querySelector('#painel header.acoes-abertas');
+  if(h && !e.target.closest('#painel header')) fecharAcoes();
+});
+
 function setSub(qual, modo){
   const mapa = {
     'criticas': [['cards','criticas'],['coments','criticasComents']],
@@ -1607,21 +1813,45 @@ function setSub(qual, modo){
 function setAba(t){
   document.querySelectorAll('.abas button').forEach(b=>b.classList.toggle('on', b.dataset.t===t));
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
-  document.getElementById('tab-'+t).classList.add('on');
+  const alvo = document.getElementById('tab-'+t);
+  if(!alvo) return;
+  alvo.classList.add('on');
+  fecharAcoes();
+  try{ const c = document.querySelector('#painel .pcorpo'); if(c) c.scrollTop = 0; }catch(e){}
   // abriu a aba = viu as novidades dela
   if(t==='criticas'){ localStorage.setItem(KV_C, new Date().toISOString()); desenharBadges(); }
   if(t==='elogios'){ localStorage.setItem(KV_E, new Date().toISOString()); desenharBadges(); }
 }
-function fecharPainel(){ document.getElementById('painel').classList.remove('on'); emProf=false; passo=0; render(); }
+function fecharPainel(){ fecharAcoes(); document.getElementById('painel').classList.remove('on'); emProf=false; passo=0; render(); }
 
+/* As 7 faixas de horário quase nunca são usadas e ocupavam meia tela.
+   Ficam escondidas atrás de um botão — e abrem sozinhas se alguma estiver ligada. */
+function toggleHora(){
+  const el = document.getElementById('filtrosHora');
+  const bt = document.getElementById('btnHora');
+  if(!el || !bt) return;
+  el.hidden = !el.hidden;
+  bt.textContent = el.hidden ? '⌄ Filtrar por horário exato' : '⌃ Esconder os horários';
+  bt.classList.toggle('aberto', !el.hidden);
+}
 function desenharFiltros(){
   document.getElementById('filtroPeriodo').innerHTML =
     PERIODOS.map(([id,nome])=>`<button class="${id===periodoAtual?'on':''}" onclick="setPeriodo('${id}')">${nome}</button>`).join('');
-  const f = document.getElementById('filtros');
-  const grupos = ['TODOS','Manhã','Tarde','Noite'];
-  f.innerHTML = grupos.map(g=>`<button class="${g===filtroAtual?'on':''}" onclick="setFiltro('${g}')">${g}</button>`).join('')
-    + `<div class="sep"></div>`
-    + HORARIOS.map(h=>`<button class="${h===filtroAtual?'on':''}" onclick="setFiltro('${h}')">${h}</button>`).join('');
+  const turnos = ['TODOS','Manhã','Tarde','Noite'];
+  document.getElementById('filtrosTurno').innerHTML =
+    turnos.map(g=>`<button class="${g===filtroAtual?'on':''}" onclick="setFiltro('${g}')">${g}</button>`).join('');
+  document.getElementById('filtrosHora').innerHTML =
+    HORARIOS.map(h=>`<button class="${h===filtroAtual?'on':''}" onclick="setFiltro('${h}')">${h}</button>`).join('');
+
+  // se o dono escolheu uma faixa, o grupo abre para ele ver o que está ligado
+  const usandoHora = HORARIOS.includes(filtroAtual);
+  const el = document.getElementById('filtrosHora'), bt = document.getElementById('btnHora');
+  if(el && bt){
+    el.hidden = !usandoHora;
+    bt.textContent = usandoHora ? '⌃ Esconder os horários' : '⌄ Filtrar por horário exato';
+    bt.classList.toggle('aberto', usandoHora);
+    bt.classList.toggle('ativo', usandoHora);
+  }
 }
 function setFiltro(fil){ filtroAtual=fil; pagC=1; pagE=1; desenharFiltros(); desenharPainel(); }
 function setPeriodo(p){ periodoAtual=p; pagC=1; pagE=1; desenharFiltros(); desenharPainel(); }
@@ -1929,16 +2159,48 @@ function statsMes(ym){
     exc: d.length ? d.filter(r=>r.geral==='EXCELENTE').length/d.length*100 : null
   };
 }
+/* Comparação de dois meses, com navegação.
+   Antes ficava preso em "este mês x mês passado". Com o tempo o dono vai
+   ter 12, 24 meses de histórico — e ia querer olhar junho contra maio.
+   Assim o bloco NUNCA cresce: são sempre duas colunas, ele é que escolhe quais. */
+let compOffset = 0;   // 0 = mês atual · 1 = mês passado · 2 = retrasado...
+function mesesComDados(){
+  const set = new Set(dados().map(r=>r.ts && r.ts.slice(0,7)).filter(Boolean));
+  avalProfs().forEach(a=>{ if(a.ts) set.add(a.ts.slice(0,7)); });
+  return [...set].sort().reverse();
+}
+function mudarComp(delta){
+  const hoje = new Date();
+  const limite = (()=>{                      // não deixa passar do mês mais antigo com dados
+    const ms = mesesComDados();
+    if(!ms.length) return 0;
+    const [ay,am] = ms[ms.length-1].split('-').map(Number);
+    return (hoje.getFullYear()-ay)*12 + (hoje.getMonth()-(am-1));
+  })();
+  compOffset = Math.max(0, Math.min(limite, compOffset + delta));
+  desenharComparativo();
+}
 function desenharComparativo(){
   const el = document.getElementById('compMes');
   if(!el) return;
   const hoje = new Date();
-  const ym = s => s.toISOString().slice(0,7);
-  const atual = ym(hoje);
-  const ant = ym(new Date(hoje.getFullYear(), hoje.getMonth()-1, 1));
+  const ym = d => d.toISOString().slice(0,7);
+  const mesA = new Date(hoje.getFullYear(), hoje.getMonth()-compOffset, 1);
+  const mesB = new Date(hoje.getFullYear(), hoje.getMonth()-compOffset-1, 1);
+  const atual = ym(mesA), ant = ym(mesB);
   const a = statsMes(atual), b = statsMes(ant);
-  const nomeMes = s => { const [y,m]=s.split('-'); return new Date(y,m-1,1).toLocaleDateString('pt-BR',{month:'long'}); };
-  if(!a.n && !b.n) return el.innerHTML = '<div class="vazio">Ainda não há dados suficientes para comparar meses.</div>';
+  const nomeMes = s2 => { const [y,m]=s2.split('-'); return new Date(y,m-1,1).toLocaleDateString('pt-BR',{month:'short'}).replace('.','')+'/'+String(y).slice(2); };
+  const nomeLongo = s2 => { const [y,m]=s2.split('-'); const t=new Date(y,m-1,1).toLocaleDateString('pt-BR',{month:'long'}); return t.charAt(0).toUpperCase()+t.slice(1); };
+
+  const ms = mesesComDados();
+  const temAntes = ms.some(m => m < ant);
+  const nav = `<div class="comp-nav">
+    <button onclick="mudarComp(1)" ${temAntes?'':'disabled'} title="mês anterior">←</button>
+    <b>${nomeLongo(atual)} <span>x</span> ${nomeLongo(ant)}</b>
+    <button onclick="mudarComp(-1)" ${compOffset>0?'':'disabled'} title="mês seguinte">→</button>
+  </div>`;
+
+  if(!a.n && !b.n) return el.innerHTML = nav + '<div class="vazio">Nenhuma avaliação nesses dois meses.</div>';
 
   const linha = (rot, va, vb, casas, sufixo, maiorEhMelhor)=>{
     const fmt = v => v===null||v===undefined ? '—' : (casas ? v.toFixed(casas) : Math.round(v))+(sufixo||'');
@@ -1952,7 +2214,19 @@ function desenharComparativo(){
     } else if(va!==null && vb===null){ delta = '<span style="color:var(--muted)">novo</span>'; }
     return `<div class="linha-comp"><span class="rot">${rot}</span><b class="atual">${fmt(va)}</b><span class="ant">${fmt(vb)}</span><span class="delta">${delta}</span></div>`;
   };
-  el.innerHTML = `
+
+  /* o mês corrente quase nunca está completo: sem este aviso, "18 contra 89"
+     parece desastre quando na verdade o mês tem 4 dias de vida */
+  let aviso = '';
+  if(compOffset === 0){
+    const diaHoje = hoje.getDate();
+    const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).getDate();
+    if(diaHoje < diasNoMes) aviso = `<div class="vazio" style="padding:0 0 12px;font-size:13px">
+      ${nomeLongo(atual)} ainda está no dia ${diaHoje} de ${diasNoMes}. O total de avaliações vai ser menor mesmo —
+      olhe as <b style="color:var(--texto)">notas</b>, que não dependem da quantidade.</div>`;
+  }
+
+  el.innerHTML = nav + aviso + `
     <div class="linha-comp cab"><span class="rot"></span><b class="atual">${nomeMes(atual).toUpperCase()}</b><span class="ant">${nomeMes(ant).toUpperCase()}</span><span class="delta">variação</span></div>
     ${linha('Avaliações recebidas', a.n||null, b.n||null, 0, '', true)}
     ${linha('Nota geral (1 a 4)', a.geral, b.geral, 2, '', true)}
@@ -2017,60 +2291,9 @@ function cartaoFeedback(r, tipo){
 }
 function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-/* ================= COMPARTILHAR RESUMO (WhatsApp) ================= */
+/* "Compartilhar resumo" foi removido: o texto era cortado no WhatsApp e o dono
+   já tem a Visão Geral e a Auditoria, que dizem a mesma coisa muito melhor. */
 function nomePeriodo(){ return (PERIODOS.find(([id])=>id===periodoAtual)||[,'Tudo'])[1]; }
-function compartilharResumo(){
-  const d = filtrados();
-  if(!d.length){ alert('Nenhuma avaliação nesse período/filtro.'); return; }
-
-  const datas = d.map(r=>r.ts).filter(Boolean).sort();
-  const fmt = ts => new Date(ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
-  const faixa = datas.length ? (fmt(datas[0])===fmt(datas[datas.length-1]) ? fmt(datas[0]) : fmt(datas[0])+' a '+fmt(datas[datas.length-1])) : '—';
-
-  const notas = d.map(r=>r.nps).filter(n=>typeof n==='number');
-  const mediaInd = notas.length ? (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1) : '—';
-  const media = id => {
-    const vals = d.map(r=>VAL[r[id]]).filter(Boolean);
-    return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : '—';
-  };
-  const criticas = d.filter(eCriticaG);
-  const elogios = d.filter(eElogioG);
-
-  let txt = `*RELATÓRIO EVEREST*\n`;
-  txt += `Período: ${nomePeriodo()} (${faixa})`;
-  if(filtroAtual!=='TODOS') txt += ` · Filtro: ${filtroAtual}`;
-  txt += `\n\n*Avaliações:* ${d.length}\n*Indicação média:* ${mediaInd} de 10\n*Nota geral:* ${media('geral')} de 4\n*Críticas:* ${criticas.length}   *Elogios:* ${elogios.length}\n`;
-  txt += `\n*Médias por categoria (1 a 4):*\n`;
-  CATS.forEach(([id,nome])=>{ txt += `${nome}: ${media(id)}\n`; });
-
-  const ultimas = criticas.slice(-5).reverse();
-  if(ultimas.length){
-    txt += `\n*Últimas críticas:*\n`;
-    ultimas.forEach(r=>{
-      const dt = dataOk(r.ts) ? dataOk(r.ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '—';
-      const ruins = CATS.filter(([id])=>r[id]==='RUIM'||r[id]==='REGULAR').map(([,n])=>n).join(', ');
-      txt += `• ${dt} · ${r.horario||'—'}${ruins?` · ${ruins}`:''}${typeof r.nps==='number'?` · nota ${r.nps}/10`:''}\n`;
-      COMENTS.forEach(([id,n])=>{ if(r[id] && String(r[id]).trim() && ladoComentario(r,id)==='critica') txt += `   "${String(r[id]).trim().slice(0,100)}"\n`; });
-    });
-  }
-  txt += `\n_Gerado pelo Totem Everest em ${new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}_`;
-
-  if(navigator.share){
-    navigator.share({text:txt}).catch(()=>copiarTexto(txt));
-  } else {
-    copiarTexto(txt);
-  }
-}
-function copiarTexto(txt){
-  const ta = document.createElement('textarea');
-  ta.value = txt;
-  ta.style.position='fixed'; ta.style.opacity='0';
-  document.body.appendChild(ta);
-  ta.select();
-  try{ document.execCommand('copy'); alert('Resumo copiado! É só colar no WhatsApp.'); }
-  catch(e){ alert('Não consegui copiar automaticamente.'); }
-  ta.remove();
-}
 
 /* ================= AUDITORIA IA =================
    Analisa as avaliações do período escolhido pelo Wilson na aba Auditoria. */
@@ -4019,16 +4242,28 @@ function desenharAuditoria(){
     </div>
     ${jaAuditado?`<p class="vazio" style="padding:12px 0 0;color:var(--regular)"><b>⚠ Esse período já foi auditado antes.</b> Pode gerar de novo se quiser — a IA vai reanalisar as mesmas avaliações.</p>`:''}`;
 
+  /* o histórico cresce para sempre: mostra as 3 últimas e guarda o resto
+     atrás de um toque, para não empurrar o resto da tela para baixo */
   const hist = auditorias().slice().reverse();
   const hEl = document.getElementById('auditHist');
   const fmtD = s => s ? s.split('-').reverse().join('/') : '—';
-  if(hEl) hEl.innerHTML = hist.length ? hist.map(a=>`
-    <div class="premio-linha" style="margin-bottom:8px">
-      <b class="cod" style="min-width:150px">${fmtD(a.de)} a ${fmtD(a.ate10)}</b>
-      <div class="flex1"><b>${a.qtd} avaliação(ões) analisada(s)</b><br>
-        <small>gerada em ${dataOk(a.ts)?dataOk(a.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</small></div>
-    </div>`).join('') : '<div class="vazio">Nenhuma auditoria feita ainda.</div>';
+  const LIM = 3;
+  const mostrar = verTodasAudits ? hist : hist.slice(0, LIM);
+  const item = a => `
+    <div class="hist-linha">
+      <b class="hist-per">${fmtD(a.de)} a ${fmtD(a.ate10)}</b>
+      <span class="hist-det">${a.qtd} avaliação(ões) · ${dataOk(a.ts)?dataOk(a.ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'—'}</span>
+    </div>`;
+  if(hEl) hEl.innerHTML = hist.length
+    ? mostrar.map(item).join('')
+      + (hist.length > LIM ? `<button class="btn-arq" style="margin-top:10px;width:100%"
+          onclick="verTodasAudits=!verTodasAudits;desenharAuditoria()">${verTodasAudits
+            ? '⌃ Mostrar só as 3 últimas'
+            : `⌄ Ver as outras ${hist.length-LIM} auditorias`}</button>` : '')
+    : '<div class="vazio">Nenhuma auditoria feita ainda.</div>';
 }
+
+let verTodasAudits = false;
 
 /* ================= ALERTAS DE NOVIDADES ================= */
 const KV_C = 'everest_visto_criticas', KV_E = 'everest_visto_elogios', KV_P = 'everest_visto_profs';
